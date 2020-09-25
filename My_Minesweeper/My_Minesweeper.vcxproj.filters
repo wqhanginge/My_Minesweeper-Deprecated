@@ -47,13 +47,13 @@
     <ClInclude Include="interface.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="lrand.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="userinterface.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="imlogistic.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -64,13 +64,13 @@
     <ClCompile Include="interface.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="lrand.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="userinterface.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="imlogistic.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
