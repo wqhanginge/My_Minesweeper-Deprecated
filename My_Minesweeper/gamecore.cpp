@@ -1,5 +1,5 @@
 #include "gamecore.h"
-#include "lrand.h"
+#include "imlogistic.h"
 #include <ctime>
 #include <memory>
 using namespace std;
@@ -128,28 +128,23 @@ void createmap(int x, int y)
 	//generate mines, 9 units around where clicked won't have mines
 	dword k = 0, index, p;
 	Neighbor neipos;
-	slrand((dword)time(nullptr));
 	while (k < Game.mines) {
-		index = lrand() % Game.size;
+		index = imlogistic() % Game.size;
 		for (p = 0; p < 9; p++) if (index == safepos[p]) break;
 		//p = 9;	//test use
 		if (p >= 9 && !MUISMINE(Game.map[index])) {
 			//generate probability P, define L as probability 1, n as neighbors' count
 			//xi as suitable mines for each neighbor
-			//nPL = L/x1 + L/x2 + ... + L/xn
+			//nPL = L/2^x1 + L/2^x2 + ... + L/2^xn
 			getneighbors(neipos, index);
 			dword neicount = 0, prsum = 0;
 			for (word i = 1; i < 9; i++) {
 				if (neipos[i] != -1) {
 					neicount++;
-					dword ppr = GETMUMINES(Game.map[neipos[i]]);
-					if (ppr < 2) ppr += 1;	//0 <= ppr < 2
-					else if (ppr < 4)ppr += 2;	//2 <= ppr < 4
-					else ppr += 3;	//4 <= ppr
-					prsum += MINEPRONE / ppr;
+					prsum += MINEPRONE >> GETMUMINES(Game.map[neipos[i]]);
 				}
 			}
-			if (lrand() % (MINEPRONE * neicount) < prsum) {
+			if (imlogistic() % (MINEPRONE * neicount) < prsum) {
 				Game.map[index] |= MU_MINE;
 				//update mines
 				for (word i = 1; i < 9; i++)
