@@ -139,11 +139,12 @@ void createmap(int x, int y)
 			getneighbors(neipos, index);
 			dword neicount = 0, prsum = 0;
 			for (word i = 1; i < 9; i++) {
-				if (neipos[i] != -1) {
+				if (neipos[i] != -1 && !MUISMINE(Game.map[neipos[i]])) {
 					neicount++;
 					prsum += MINEPRONE >> GETMUMINES(Game.map[neipos[i]]);
 				}
 			}
+			if (neicount == 0) continue;
 			if (imlogistic() % (MINEPRONE * neicount) < prsum) {
 				Game.map[index] |= MU_MINE;
 				//update mines
