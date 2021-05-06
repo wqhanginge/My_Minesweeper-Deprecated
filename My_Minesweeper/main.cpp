@@ -542,6 +542,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 			lastdoublemb = false;
 		break;
 	case WM_MOUSEMOVE:
+		SetFocus(hwnd);
 		//won't work after game finishing
 		if (Game.state == FAIL || Game.state == SUCCESS) break;
 
