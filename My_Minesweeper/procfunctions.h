@@ -1,26 +1,63 @@
 #pragma once
 
 /*
- * this file defines functions to encapslate several optinos about ui and game
- * functions defined in this file are supplements for main.cpp
+ * this file contains encapsulations of UI operations and Game core operations
+ * this file also contians IO functions and Proc Functions for Win32 window
  */
 
-#define WIN32_LEAN_AND_MEAN
-
-#include <Windows.h>
-#include "defines.h"
+#include "stdincludes.h"
 #include "gamecore.h"
 #include "userinterface.h"
-#include "resource.h"
-#include <tchar.h>
-#include <strsafe.h>
-#pragma comment(lib, "Version.lib")
 
-extern HINSTANCE hInst;
+
+/* Dialog defines */
+
+//Custom Dialog
+#define CUSTOM_EDIT_LEN	8
+//end Custom Dialog
+
+//GetName Dialog
+#define NAME_EDIT_LEN	SCORE_NAME_LEN
+//end GetName Dialog
+
+//Record Dialog
+#define TIME_STRLEN		10
+#define DEF_TIMEUNIT_EN	" Sec"
+#define DEF_TIMEUNIT_CH	" √Î"
+//end Record Dialog
+
+/* IO defines */
+
+#define DEF_FILENAME	"MyMinesweeper.ini"
+#define DEF_FILEPATH_EV	"LOCALAPPDATA"
+#define INIT_ANAME		"InitInfo"
+#define SCORE_ANAME		"Record"
+
+/* APP Infomation defines */
+
+#define APPNAME			"My Minesweeper"
+#define WNDCNAME		"My_Minesweeper"
+#define BUTTONNAME		"ResetB"
+#define ABOUTINFOLEN	100
+#define ABOUTTEXT		"My Minesweeper\nversion "
+
+/* miscellaneous defines */
+
+#define GAMETIMERID		1
+#define GAMETIMERELAPSE	1000
+#define DEFWNDLEFT		128
+#define DEFWNDTOP		128
+ //this use for generate probability, generation function: P = 1 / 2^x, x = mines
+ //value = 1 << 8
+#define MINEPRONE		256
+
+
+
+extern HINSTANCE hInst;	//the program istance handle
 extern HWND hWnd;
 extern HMENU hMenu;
 
-extern HBITMAP hbm_resetb, hbm_click, hbm_fail, hbm_success;
+extern HBITMAP hbm_rb, hbm_click, hbm_fail, hbm_success;
 
 
 //if a mouse position is inside the MapUnits area
@@ -52,6 +89,11 @@ template <dword size> inline int dword2str(
 	_In_ dword x
 )
 { return dword2str(str, size, x); }
+
+
+//manage bitmaps
+void loadBitmaps();
+void freeBitmaps();
 
 /* manage MapUnit in MapArea */
 //paint GameMap, use 'left' and 'top' as position zero of the whole map
@@ -91,13 +133,13 @@ int maketimestr(
 	_Out_ TCHAR *buffer,
 	_In_ int size,
 	_In_ dword time,
-	_In_ const TCHAR *timeunit = TEXT(DEFTIMEUNITEN)
+	_In_ const TCHAR *timeunit = TEXT(DEF_TIMEUNIT_EN)
 );
 template <dword size>
 inline int maketimestr(
 	_Out_ TCHAR(&buffer)[size],
 	_In_ dword time,
-	_In_ const TCHAR *timeunit = TEXT(DEFTIMEUNITEN)
+	_In_ const TCHAR *timeunit = TEXT(DEF_TIMEUNIT_EN)
 )
 { return maketimestr(buffer, size, time, timeunit); }
 

@@ -1,14 +1,7 @@
-#define WIN32_LEAN_AND_MEAN
-
-#include <Windows.h>
-#include "defines.h"
+#include "stdincludes.h"
 #include "gamecore.h"
 #include "userinterface.h"
-#include "interface.h"
-#include "resource.h"
-#include <tchar.h>
-#include <ctime>
-#include "imlogistic.h"
+#include "procfunctions.h"
 
 #define WM_GAMERESET	(WM_APP + 0)		//sent when game needs reset
 #define WM_GAMESUCCESS	(WM_APP + 1)		//sent when game is succeed
@@ -29,7 +22,7 @@ HINSTANCE hInst;
 HWND hWnd;
 HMENU hMenu;
 
-HBITMAP hbm_resetb, hbm_click, hbm_fail, hbm_success;
+HBITMAP hbm_rb, hbm_click, hbm_fail, hbm_success;
 
 
 INT_PTR CALLBACK AboutProc(HWND habout, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -79,15 +72,15 @@ INT_PTR CALLBACK RecordProc(HWND hrecord, UINT msg, WPARAM wparam, LPARAM lparam
 		hsn = FindWindowEx(hrecord, hmn, TEXT("STATIC"), NULL);
 
 		//init static control show
-		maketimestr(timebuffer, Score.juniortime);
+		maketimestr(timebuffer, Score.junior_time);
 		SetWindowText(hjt, timebuffer);
-		maketimestr(timebuffer, Score.middletime);
+		maketimestr(timebuffer, Score.middle_time);
 		SetWindowText(hmt, timebuffer);
-		maketimestr(timebuffer, Score.seniortime);
+		maketimestr(timebuffer, Score.senior_time);
 		SetWindowText(hst, timebuffer);
-		SetWindowText(hjn, Score.juniorname);
-		SetWindowText(hmn, Score.middlename);
-		SetWindowText(hsn, Score.seniorname);
+		SetWindowText(hjn, Score.junior_name);
+		SetWindowText(hmn, Score.middle_name);
+		SetWindowText(hsn, Score.senior_name);
 		break;
 	case WM_CLOSE:
 		EndDialog(hrecord, 0);
@@ -96,14 +89,14 @@ INT_PTR CALLBACK RecordProc(HWND hrecord, UINT msg, WPARAM wparam, LPARAM lparam
 		switch (LOWORD(wparam)) {
 		case IDRESET:
 			//reset the record
-			resetrecord();
-			maketimestr(timebuffer, MAXTIME);
+			resetRecord();
+			maketimestr(timebuffer, MAX_TIME);
 			SetWindowText(hjt, timebuffer);
 			SetWindowText(hmt, timebuffer);
 			SetWindowText(hst, timebuffer);
-			SetWindowText(hjn, TEXT(DEFSCORENAMEEN));
-			SetWindowText(hmn, TEXT(DEFSCORENAMEEN));
-			SetWindowText(hsn, TEXT(DEFSCORENAMEEN));
+			SetWindowText(hjn, TEXT(DEF_SCORE_NAME_EN));
+			SetWindowText(hmn, TEXT(DEF_SCORE_NAME_EN));
+			SetWindowText(hsn, TEXT(DEF_SCORE_NAME_EN));
 			break;
 		case IDOK:
 			EndDialog(hrecord, 0);
@@ -125,14 +118,14 @@ INT_PTR CALLBACK GetNameProc(HWND hgetname, UINT msg, WPARAM wparam, LPARAM lpar
 	case WM_INITDIALOG:
 		//get edit control handle and init default show
 		heditname = FindWindowEx(hgetname, NULL, TEXT("EDIT"), NULL);
-		SetWindowText(heditname, getrecordname());
+		SetWindowText(heditname, getpRecordName());
 		SendMessage(heditname, EM_LIMITTEXT, NAMEEDITLEN - 1, 0);
 		SendMessage(heditname, EM_SETSEL, 0, -1);
 		SetFocus(heditname);
 		break;
 	case WM_DESTROY:
 		//get what writen in the edit control when exit dialog
-		GetWindowText(heditname, getrecordname(), NAMEEDITLEN);
+		GetWindowText(heditname, getpRecordName(), NAMEEDITLEN);
 		break;
 	case WM_COMMAND:
 		switch (LOWORD(wparam)) {
@@ -273,14 +266,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	switch (msg) {
 	case WM_CREATE:
 		//load bitmaps
-		loadbitmaps();
+		loadBitmaps();
 		//get paint device contex
 		hdc = GetDC(hwnd);
 
 		//init game from file
-		GetEnvironmentVariable(TEXT(DEFFILEPATHEV), buffer, MAX_PATH);
+		GetEnvironmentVariable(TEXT(DEF_FILEPATH_EV), buffer, MAX_PATH);
 		_tcscat_s(buffer, TEXT("\\"));
-		_tcscat_s(buffer, TEXT(DEFFILENAME));
+		_tcscat_s(buffer, TEXT(DEF_FILENAME));
 		initgame(buffer, wndpos);
 		simlogistic((dword)time(nullptr));
 
@@ -291,20 +284,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		//create reset button
 		hresetb = CreateWindowEx(0, TEXT("BUTTON"), TEXT(BUTTONNAME),
 			WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_BITMAP,
-			RESETBLEFT, RESETBTOP,
+			RB_LEFT, RESETBTOP,
 			RESETBSIZE, RESETBSIZE,
 			hwnd,
 			(HMENU)ID_RESETB,
 			hInst,
 			NULL);
-		PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_resetb);
+		PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_rb);
 
 		//adjust window size
 		GetWindowRect(hwnd, &wndrect);
 		GetClientRect(hwnd, &cltrect);
 		edgew = (wndrect.right - wndrect.left) - cltrect.right;
 		edgeh = (wndrect.bottom - wndrect.top) - cltrect.bottom;
-		wndrect = { wndpos.x,wndpos.y,wndpos.x + CLIENTWIDTH + edgew,wndpos.y + CLIENTHEIGHT + edgeh };
+		wndrect = { wndpos.x,wndpos.y,wndpos.x + CLIENT_WIDTH + edgew,wndpos.y + CLIENT_HEIGHT + edgeh };
 		MoveWindow(hwnd, wndrect.left, wndrect.top, wndrect.right - wndrect.left, wndrect.bottom - wndrect.top, FALSE);
 
 		//init double mouse button state
@@ -312,7 +305,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		break;
 	case WM_DESTROY:
 		//release bitmaps
-		freebitmaps();
+		freeBitmaps();
 		//release device contex
 		ReleaseDC(hwnd, hdc);
 		//save game info
@@ -326,20 +319,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		//redraw the whole client area
 		hpaintdc = BeginPaint(hwnd, &ps);
 		hdcbuffer = CreateCompatibleDC(hpaintdc);
-		hbmbuffer = CreateCompatibleBitmap(hpaintdc, CLIENTWIDTH, CLIENTHEIGHT);
+		hbmbuffer = CreateCompatibleBitmap(hpaintdc, CLIENT_WIDTH, CLIENT_HEIGHT);
 		SelectObject(hdcbuffer, hbmbuffer);
 
-		drawclientbg(hdcbuffer, 0, 0);
-		drawinfobg(hdcbuffer, INFOLEFT, INFOTOP);
-		drawmapareabg(hdcbuffer, MAPAREALEFT, MAPAREATOP);
-		drawminebg(hdcbuffer, MINELEFT, MINETOP);
-		drawtimebg(hdcbuffer, TIMELEFT, TIMETOP);
-		drawinfonumsNB(hdcbuffer, IMNSLEFT, IMNSTOP, Game.minesleft);
-		drawinfonumsNB(hdcbuffer, ITNSLEFT, ITNSTOP, Game.time);
+		drawClientBg(hdcbuffer, 0, 0);
+		drawInfoBg(hdcbuffer, INFO_LEFT, INFO_TOP);
+		drawMapAreaBg(hdcbuffer, MAPAREALEFT, MAPAREATOP);
+		drawMineBg(hdcbuffer, MINELEFT, MINETOP);
+		drawTimeBg(hdcbuffer, TIME_LEFT, TIMETOP);
+		drawINNB(hdcbuffer, IMNSLEFT, IMNSTOP, Game.mine_remains);
+		drawINNB(hdcbuffer, TIMENUMS_LEFT, ITNSTOP, Game.time);
 		memset(Game.mapchange, 1, sizeof(bool)*Game.size);
 		paintmapNB(hdcbuffer, MAPUNITSLEFT, MAPUNITSTOP);
 
-		BitBlt(hpaintdc, 0, 0, CLIENTWIDTH, CLIENTHEIGHT, hdcbuffer, 0, 0, SRCCOPY);
+		BitBlt(hpaintdc, 0, 0, CLIENT_WIDTH, CLIENT_HEIGHT, hdcbuffer, 0, 0, SRCCOPY);
 		DeleteObject(hbmbuffer);
 		DeleteObject(hdcbuffer);
 
@@ -356,19 +349,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		break;
 	case WM_GAMERESET:
 		KillTimer(hwnd, GAMETIMERID);
-		resetgame();
+		resetGame();
 		lastdoublemb = false;
-		PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_resetb);
+		PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_rb);
 		InvalidateRect(hwnd, NULL, FALSE);
 		break;
 	case WM_GAMESTART:
-		createmap((int)lparam);
+		createGameMap((int)lparam);
 		Game.state = PROGRESS;
 		Game.time = 0;
 		SetTimer(hwnd, GAMETIMERID, GAMETIMERELAPSE, NULL);
-		clickunit((int)lparam);
-		openblanks((int)lparam);
-		if (Game.mines == Game.size - Game.unitsuncov)
+		clickUnit((int)lparam);
+		openBlanks((int)lparam);
+		if (Game.mines == Game.size - Game.uncov_units)
 			PostMessage(hwnd, WM_GAMESUCCESS, 0, 0);
 		else
 			paintmap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
@@ -378,7 +371,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		Game.state = FAIL;
 		PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_fail);
 		//show all mines positions when game set
-		uncovallmines();
+		uncovAllMines();
 		paintmap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
 		break;
 	case WM_GAMESUCCESS:
@@ -386,30 +379,30 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		Game.state = SUCCESS;
 		PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_success);
 		//show all mines positions when game set
-		Game.minesleft = 0;
-		drawinfonums(hdc, IMNSLEFT, IMNSTOP, 0);
-		uncovallmines();
+		Game.mine_remains = 0;
+		drawIN(hdc, IMNSLEFT, IMNSTOP, 0);
+		uncovAllMines();
 		paintmap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
 		//if break record
-		if (ISSTANDARD(Game.mode) && Game.time < getrecordtime()) {
-			updatetime();
+		if (IS_STANDARD(Game.mode) && Game.time < getRecordTime()) {
+			setRecordTime();
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_GETNAME), hwnd, GetNameProc);
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_RECORD), hwnd, RecordProc);
 		}
 		break;
 	case WM_GAMEMODECHG:
 		KillTimer(hwnd, GAMETIMERID);
-		setgamemode((byte)wparam, GETCHGWIDTH(lparam), GETCHGHEIGHT(lparam), GETCHGMINES(lparam));
+		setGameMode((byte)wparam, GETCHGWIDTH(lparam), GETCHGHEIGHT(lparam), GETCHGMINES(lparam));
 		lastdoublemb = false;
 		//change window size for new game map size, no need to reset
 		GetWindowRect(hwnd, &wndrect);
-		wndrect.right = CLIENTWIDTH + edgew + wndrect.left;
-		wndrect.bottom = CLIENTHEIGHT + edgeh + wndrect.top;
+		wndrect.right = CLIENT_WIDTH + edgew + wndrect.left;
+		wndrect.bottom = CLIENT_HEIGHT + edgeh + wndrect.top;
 		//invalidate all client area for repaint
 		InvalidateRect(hwnd, NULL, FALSE);
 		MoveWindow(hwnd, wndrect.left, wndrect.top, wndrect.right - wndrect.left, wndrect.bottom - wndrect.top, TRUE);
-		MoveWindow(hresetb, RESETBLEFT, RESETBTOP, RESETBSIZE, RESETBSIZE, TRUE);
-		PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_resetb);
+		MoveWindow(hresetb, RB_LEFT, RESETBTOP, RESETBSIZE, RESETBSIZE, TRUE);
+		PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_rb);
 		break;
 	case WM_LBUTTONDOWN:
 		//won't work after game finishing
@@ -423,7 +416,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		index = lparamtoindex(lparam);
 		if (wparam & MK_RBUTTON) {	//double buttons down
 			lastdoublemb = true;
-			getneighbors(indexes, index);
+			getNeighbors(indexes, index);
 			showclickdown(hdc, MAPUNITSLEFT, MAPUNITSTOP, indexes);
 		}
 		else {	//single button
@@ -436,18 +429,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		//won't work after game finishing
 		if (Game.state == FAIL || Game.state == SUCCESS) break;
 
-		PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_resetb);
+		PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_rb);
 
 		//break when not in the map area
 		if (!lparamispos(lparam)) break;
 		index = lparamtoindex(lparam);
 		if (wparam & MK_RBUTTON) {	//double buttons
 			lastdoublemb = true;
-			int ret = digneighbors(index);
+			int ret = digNeighbors(index);
 			if (ret == -1) {
 				PostMessage(hwnd, WM_GAMEFAIL, 0, 0);
 			}
-			else if (Game.mines == Game.size - Game.unitsuncov) {
+			else if (Game.mines == Game.size - Game.uncov_units) {
 				PostMessage(hwnd, WM_GAMESUCCESS, 0, 0);
 			}
 			else
@@ -455,16 +448,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		}
 		else if (!lastdoublemb) {	//single button and last was not double button
 			lastdoublemb = false;
-			if (Game.state == INITIAL && GETMUSTATE(Game.map[index]) != MUS_FLAG) {	//first click
+			if (Game.state == INIT && GETMUSTATE(Game.map[index]) != MUS_FLAG) {	//first click
 				PostMessage(hwnd, WM_GAMESTART, 0, index);
 			}
 			else {	//not first click
-				int ret = clickunit(index);
-				if (ret == 0) openblanks(index);
+				int ret = clickUnit(index);
+				if (ret == 0) openBlanks(index);
 				if (ret == -1) {
 					PostMessage(hwnd, WM_GAMEFAIL, 0, 0);
 				}
-				else if (Game.mines == Game.size - Game.unitsuncov) {
+				else if (Game.mines == Game.size - Game.uncov_units) {
 					PostMessage(hwnd, WM_GAMESUCCESS, 0, 0);
 				}
 				else
@@ -486,33 +479,33 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		if (wparam & MK_LBUTTON) {	//double buttons
 			lastdoublemb = true;
 			PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_click);
-			getneighbors(indexes, index);
+			getNeighbors(indexes, index);
 			showclickdown(hdc, MAPUNITSLEFT, MAPUNITSTOP, indexes);
 		}
 		else {	//single button, flag a unit or mark a unit
 			lastdoublemb = false;
 			if (GETMUSTATE(Game.map[index]) == MUS_COVER) {
-				Game.map[index] = MAKEMUSTATE(MUS_FLAG, Game.map[index]);
-				drawmapunit(hdc, MAPUNITSLEFT + indextorleft(index), MAPUNITSTOP + indextortop(index), index);
-				Game.minesleft--;
-				drawinfonums(hdc, IMNSLEFT, IMNSTOP, Game.minesleft);
+				SETMUSTATE(MUS_FLAG, Game.map[index]);
+				drawMapUnit(hdc, MAPUNITSLEFT + index2rleft(index), MAPUNITSTOP + index2rtop(index), index);
+				Game.mine_remains--;
+				drawIN(hdc, IMNSLEFT, IMNSTOP, Game.mine_remains);
 			}
 			else if (GETMUSTATE(Game.map[index]) == MUS_FLAG && Game.mark) {
-				Game.map[index] = MAKEMUSTATE(MUS_MARK, Game.map[index]);
-				drawmapunit(hdc, MAPUNITSLEFT + indextorleft(index), MAPUNITSTOP + indextortop(index), index);
-				Game.minesleft++;
-				drawinfonums(hdc, IMNSLEFT, IMNSTOP, Game.minesleft);
+				SETMUSTATE(MUS_MARK, Game.map[index]);
+				drawMapUnit(hdc, MAPUNITSLEFT + index2rleft(index), MAPUNITSTOP + index2rtop(index), index);
+				Game.mine_remains++;
+				drawIN(hdc, IMNSLEFT, IMNSTOP, Game.mine_remains);
 			}
 			else if (GETMUSTATE(Game.map[index]) == MUS_FLAG && !Game.mark)
 			{
-				Game.map[index] = MAKEMUSTATE(MUS_COVER, Game.map[index]);
-				drawmapunit(hdc, MAPUNITSLEFT + indextorleft(index), MAPUNITSTOP + indextortop(index), index);
-				Game.minesleft++;
-				drawinfonums(hdc, IMNSLEFT, IMNSTOP, Game.minesleft);
+				SETMUSTATE(MUS_COVER, Game.map[index]);
+				drawMapUnit(hdc, MAPUNITSLEFT + index2rleft(index), MAPUNITSTOP + index2rtop(index), index);
+				Game.mine_remains++;
+				drawIN(hdc, IMNSLEFT, IMNSTOP, Game.mine_remains);
 			}
 			else if (GETMUSTATE(Game.map[index]) == MUS_MARK) {
-				Game.map[index] = MAKEMUSTATE(MUS_COVER, Game.map[index]);
-				drawmapunit(hdc, MAPUNITSLEFT + indextorleft(index), MAPUNITSTOP + indextortop(index), index);
+				SETMUSTATE(MUS_COVER, Game.map[index]);
+				drawMapUnit(hdc, MAPUNITSLEFT + index2rleft(index), MAPUNITSTOP + index2rtop(index), index);
 			}
 		}
 		break;
@@ -521,18 +514,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		//won't work after game finishing
 		if (Game.state == FAIL || Game.state == SUCCESS) break;
 
-		PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_resetb);
+		PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_rb);
 
 		//break when not in the map area
 		if (!lparamispos(lparam)) break;
 		index = lparamtoindex(lparam);
 		if (wparam & MK_LBUTTON) {	//double buttons
 			lastdoublemb = true;
-			int ret = digneighbors(index);
+			int ret = digNeighbors(index);
 			if (ret == -1) {
 				PostMessage(hwnd, WM_GAMEFAIL, 0, 0);
 			}
-			else if (Game.mines == Game.size - Game.unitsuncov) {
+			else if (Game.mines == Game.size - Game.uncov_units) {
 				PostMessage(hwnd, WM_GAMESUCCESS, 0, 0);
 			}
 			else
@@ -555,7 +548,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		if (wparam & MK_LBUTTON) {	//with left button down
 			if (wparam & MK_RBUTTON) {	//double buttons
 				Neighbor indexes;
-				getneighbors(indexes, index);
+				getNeighbors(indexes, index);
 				showclickdown(hdc, MAPUNITSLEFT, MAPUNITSTOP, indexes);
 			}
 			//single button
@@ -567,9 +560,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 			paintmap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
 		break;
 	case WM_TIMER:
-		if (Game.time <= MAXTIME) {
+		if (Game.time <= MAX_TIME) {
 			Game.time++;
-			drawinfonums(hdc, ITNSLEFT, ITNSTOP, Game.time);
+			drawIN(hdc, TIMENUMS_LEFT, ITNSTOP, Game.time);
 		}
 		break;
 	default:
