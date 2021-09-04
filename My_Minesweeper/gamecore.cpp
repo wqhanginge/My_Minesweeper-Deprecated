@@ -125,44 +125,32 @@ void createmap(int x, int y)
 	Neighbor safepos;
 	getneighbors(safepos, x, y);
 
-	//generate mines, 9 units around where clicked won't have mines
-	dword k = 0, index, p;
-	Neighbor neipos;
-	while (k < Game.mines) {
-		index = imlogistic() % Game.size;
-		for (p = 0; p < 9; p++) if (index == safepos[p]) break;
-		//p = 9;	//test use
-		if (p >= 9 && !MUISMINE(Game.map[index])) {
-			//generate probability P, define L as probability 1, n as neighbors' count
-			//xi as suitable mines for each neighbor
-			//nPL = L/2^x1 + L/2^x2 + ... + L/2^xn
-			getneighbors(neipos, index);
-			dword neicount = 0, prsum = 0;
-			for (word i = 1; i < 9; i++) {
-				if (neipos[i] != -1) {
-					neicount++;
-					prsum += MINEPRONE >> GETMUMINES(Game.map[neipos[i]]);
-				}
-			}
-			if (imlogistic() % (MINEPRONE * neicount) < prsum) {
-				Game.map[index] |= MU_MINE;
-				//update mines
-				for (word i = 1; i < 9; i++)
-					if (neipos[i] != -1) Game.map[neipos[i]]++;
-				k++;
-			}
+	//generate mines, 8 units around where clicked won't have mines
+	//use shuffle algorithm
+	memset(Game.map, MU_MINE, Game.mines);
+	dword neicount = 0;
+	for (int i = 0; i < 9; i++) neicount += (safepos[i] != -1);	//remember how many safe positions needed
+	for (dword k = 0; k < Game.mines; k++) {	//shuffle algorithm
+		dword index = imlogistic(k, Game.size - neicount);
+		swap(Game.map[k], Game.map[index]);
+	}
+	for (int i = 0; i < 9; i++) {	//move safe place to where it is at
+		if (safepos[i] != -1) {
+			swap(Game.map[safepos[i]], Game.map[Game.size - neicount]);
+			neicount--;
 		}
 	}
-	/*
+
 	//write neighbor mines
-	for (word i = 0; i < Game.size; i++) {
+	for (dword i = 0; i < Game.size; i++) {
 		if (MUISMINE(Game.map[i])) continue;
 		int m = 0;
+		Neighbor neipos;
 		getneighbors(neipos, i);
 		for (int j = 1; j < 9; j++)
 			if (neipos[j] != -1 && MUISMINE(Game.map[neipos[j]])) m++;
 		Game.map[i] = MAKEMUMINES(m, Game.map[i]);
-	}*/
+	}
 }
 
 void createmap(int index)

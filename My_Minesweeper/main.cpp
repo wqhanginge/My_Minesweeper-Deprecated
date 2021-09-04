@@ -32,6 +32,38 @@ HMENU hMenu;
 HBITMAP hbm_resetb, hbm_click, hbm_fail, hbm_success;
 
 
+INT_PTR CALLBACK AboutProc(HWND habout, UINT msg, WPARAM wparam, LPARAM lparam) {
+	static HWND htext;
+	TCHAR aboutinfo[ABOUTINFOLEN];
+
+	switch (msg) {
+	case WM_INITDIALOG:
+		//get text handel
+		htext = FindWindowEx(habout, NULL, TEXT("STATIC"), NULL);
+
+		//show about information
+		_tcscpy_s(aboutinfo, ABOUTINFOLEN, TEXT(ABOUTTEXT));
+		getversion(&aboutinfo[_tcslen(aboutinfo)], ABOUTINFOLEN - _tcslen(aboutinfo));
+		SetWindowText(htext, aboutinfo);
+		break;
+	case WM_CLOSE:
+		EndDialog(habout, 0);
+		break;
+	case WM_COMMAND:
+		switch (LOWORD(wparam)) {
+		case IDOK:
+			EndDialog(habout, 0);
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
 INT_PTR CALLBACK RecordProc(HWND hrecord, UINT msg, WPARAM wparam, LPARAM lparam) {
 	static HWND hjt, hmt, hst, hjn, hmn, hsn;
 	TCHAR timebuffer[TIMESTRLEN];
@@ -56,6 +88,9 @@ INT_PTR CALLBACK RecordProc(HWND hrecord, UINT msg, WPARAM wparam, LPARAM lparam
 		SetWindowText(hjn, Score.juniorname);
 		SetWindowText(hmn, Score.middlename);
 		SetWindowText(hsn, Score.seniorname);
+		break;
+	case WM_CLOSE:
+		EndDialog(hrecord, 0);
 		break;
 	case WM_COMMAND:
 		switch (LOWORD(wparam)) {
@@ -139,6 +174,9 @@ INT_PTR CALLBACK CustomProc(HWND hcustom, UINT msg, WPARAM wparam, LPARAM lparam
 		dword2str(str, mines);
 		SetWindowText(heditm, str);
 		break;
+	case WM_CLOSE:
+		EndDialog(hcustom, 0);
+		break;
 	case WM_DESTROY:
 		//set game mode when exit dialog
 		PostMessage(hWnd, WM_GAMEMODECHG, CUSTOM, MAKECHGLPARAM(width, height, mines));
@@ -204,9 +242,9 @@ void MenuProc(WPARAM wparam) {
 	case ID_GAME_EXIT:
 		PostMessage(hWnd, WM_DESTROY, 0, 0);
 		break;
-	case ID_HELP:
-		//show help infomation
-		MessageBox(hWnd, TEXT("Regular Minesweeper, please don't doubt"), TEXT("Help"), MB_OK);
+	case ID_ABOUT:
+		//show about infomation
+		DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUT), hWnd, AboutProc);
 		break;
 	default:
 		break;
@@ -251,7 +289,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		changemark(Game.mark);
 
 		//create reset button
-		hresetb = CreateWindowEx(0, TEXT("BUTTON"), TEXT("ResetB"),
+		hresetb = CreateWindowEx(0, TEXT("BUTTON"), TEXT(BUTTONNAME),
 			WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_BITMAP,
 			RESETBLEFT, RESETBTOP,
 			RESETBSIZE, RESETBSIZE,
@@ -504,6 +542,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 			lastdoublemb = false;
 		break;
 	case WM_MOUSEMOVE:
+		SetFocus(hwnd);
 		//won't work after game finishing
 		if (Game.state == FAIL || Game.state == SUCCESS) break;
 
@@ -549,7 +588,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	wndc.hIconSm = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
 	wndc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 	wndc.lpfnWndProc = WndProc;
-	wndc.lpszClassName = TEXT("My_Minesweeper");
+	wndc.lpszClassName = TEXT(WNDCNAME);
 	wndc.lpszMenuName = NULL;
 	wndc.style = CS_VREDRAW | CS_HREDRAW;
 
@@ -557,8 +596,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	hInst = hInstance;
 	hMenu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU1));
-	hWnd = CreateWindowEx(0, wndc.lpszClassName, TEXT("My Minesweeper"),
-		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX,
+	hWnd = CreateWindowEx(0, wndc.lpszClassName, TEXT(APPNAME),
+		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
 		CW_USEDEFAULT, CW_USEDEFAULT,
 		CW_USEDEFAULT, CW_USEDEFAULT,
 		NULL,
