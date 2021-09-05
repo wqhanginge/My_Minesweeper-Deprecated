@@ -24,86 +24,39 @@ const bool InfoNumBG[INFONUM_WIDTH][INFONUM_HEIGHT] =
 };
 
 
-/* get flexiable dialog's position */
-
-int map_width()
-{
-	return (Game.width * MU_SIZE);
-}
-
-int map_height()
-{
-	return (Game.height * MU_SIZE);
-}
-
-int info_width()
-{
-	return (PART_EDGE + Game.width * MU_SIZE + PART_EDGE);
-}
-
-int time_left()
-{
-	return (INFO_LEFT + INFO_WIDTH - RIGHT_DIST - TIME_WIDTH);
-}
-
-int timenums_left()
-{
-	return (TIME_LEFT + IN_EDGE);
-}
-
-int rb_left()
-{
-	return (INFO_LEFT + (INFO_WIDTH - RB_SIZE) / 2);
-}
-
-int maparea_height()
-{
-	return (PART_EDGE + Game.height * MU_SIZE + PART_EDGE);
-}
-
-int client_width()
-{
-	return (AREA_EDGE + INFO_WIDTH + AREA_EDGE);
-}
-
-int client_height()
-{
-	return (AREA_EDGE + INFO_HEIGHT + AREA_EDGE + MAPAREA_HEIGHT + AREA_EDGE);
-}
-
 /* usefull functions */
 
-int rpos2index(int rleft, int rtop)
+int ppos2index(int px, int py)
 {
-	return xy2index(rleft2x(rleft), rtop2y(rtop));
+	return xy2index(px2x(px), py2y(py));
 }
 
-int rleft2x(int rleft)
+int px2x(int px)
 {
-	return (rleft / MU_SIZE);
+	return (px / MU_SIZE);
 }
 
-int rtop2y(int rtop)
+int py2y(int py)
 {
-	return (rtop / MU_SIZE);
+	return (py / MU_SIZE);
 }
 
-int index2rleft(int index)
+int index2px(int index)
 {
-	return x2rleft(index2x(index));
+	return x2px(index2x(index));
 }
 
-int index2rtop(int index)
+int index2py(int index)
 {
-	return y2rtop(index2y(index));
+	return y2py(index2y(index));
 }
 
-int x2rleft(int x)
+int x2px(int x)
 {
 	return (x * MU_SIZE);
 }
 
-int y2rtop(int y)
+int y2py(int y)
 {
 	return (y * MU_SIZE);
 }
@@ -371,22 +324,22 @@ static void drawmuitemmark(
 	_In_ HDC hdestdc,
 	_In_ int left,
 	_In_ int top,
-	_In_ bool moved,
+	_In_ bool clicked,
 	_In_ COLORREF mark = COLOR_MUMARK
 )
 {
 	HBRUSH hbmark = CreateSolidBrush(mark);
-	RECT rect = { left + moved + 9,top + moved + 4,left + moved + 15,top + moved + 5 };
+	RECT rect = { left + clicked + 9,top + clicked + 4,left + clicked + 15,top + clicked + 5 };
 	FillRect(hdestdc, &rect, hbmark);
-	rect = { left + moved + 7,top + moved + 5,left + moved + 10,top + moved + 9 };
+	rect = { left + clicked + 7,top + clicked + 5,left + clicked + 10,top + clicked + 9 };
 	FillRect(hdestdc, &rect, hbmark);
-	rect = { left + moved + 14,top + moved + 5,left + moved + 17,top + moved + 10 };
+	rect = { left + clicked + 14,top + clicked + 5,left + clicked + 17,top + clicked + 10 };
 	FillRect(hdestdc, &rect, hbmark);
-	rect = { left + moved + 12,top + moved + 10,left + moved + 15,top + moved + 12 };
+	rect = { left + clicked + 12,top + clicked + 10,left + clicked + 15,top + clicked + 12 };
 	FillRect(hdestdc, &rect, hbmark);
-	rect = { left + moved + 10,top + moved + 12,left + moved + 14,top + moved + 15 };
+	rect = { left + clicked + 10,top + clicked + 12,left + clicked + 14,top + clicked + 15 };
 	FillRect(hdestdc, &rect, hbmark);
-	rect = { left + moved + 10,top + moved + 17,left + moved + 14,top + moved + 20 };
+	rect = { left + clicked + 10,top + clicked + 17,left + clicked + 14,top + clicked + 20 };
 	FillRect(hdestdc, &rect, hbmark);
 	DeleteObject(hbmark);
 }
@@ -657,11 +610,6 @@ void drawTimeBg(HDC hdestdc, int left, int top, COLORREF inner, COLORREF light, 
 	drawthinedgebg(hdestdc, left, top, TIME_WIDTH, TIME_HEIGHT, inner, light, shadow);
 }
 
-void drawResetButtonBg(HDC hdestdc, int left, int top, COLORREF inner, COLORREF light, COLORREF lightlow, COLORREF shadow, COLORREF shadowhigh)
-{
-	drawthickedgebg(hdestdc, left, top, RB_SIZE, RB_SIZE, inner, shadow, shadowhigh, light, lightlow);
-}
-
 void drawIN(HDC hdestdc, int left, int top, int num, COLORREF bg, COLORREF dark, COLORREF bright)
 {
 	HDC hdcbuffer = CreateCompatibleDC(hdestdc);
@@ -713,8 +661,14 @@ void drawInfoNum(HDC hdestdc, int left, int top, int num, COLORREF bg, COLORREF 
 	DeleteObject(hpen);
 }
 
+void drawResetButtonBg(HDC hdestdc, int left, int top, COLORREF inner, COLORREF light, COLORREF lightlow, COLORREF shadow, COLORREF shadowhigh)
+{
+	drawthickedgebg(hdestdc, left, top, RB_SIZE, RB_SIZE, inner, shadow, shadowhigh, light, lightlow);
+}
+
 void drawBmpOnResetButton(HDC hdestdc, int left, int top, HBITMAP hbm, bool clicked)
 {
+	if (hbm == NULL) return;
 	HDC hdcbitmap = CreateCompatibleDC(hdestdc);
 	SelectObject(hdcbitmap, hbm);
 	if (clicked) BitBlt(hdestdc, left + 1, top + 1, BMP_SIZE - 1, BMP_SIZE - 1, hdcbitmap, 0, 0, SRCCOPY);
@@ -804,25 +758,20 @@ void drawMUNum(HDC hdestdc, int left, int top, int num, COLORREF numcolor, COLOR
 	}
 }
 
-void drawMapUnit(HDC hdestdc, int left, int top, int index)
+void drawMapUnit(HDC hdestdc, int left, int top, byte mapunit)
 {
 	HDC hdcbuffer = CreateCompatibleDC(hdestdc);
 	HBITMAP hbmbuffer = CreateCompatibleBitmap(hdestdc, MU_SIZE, MU_SIZE);
 	SelectObject(hdcbuffer, hbmbuffer);
-	drawMapUnitNB(hdcbuffer, 0, 0, index);
+	drawMapUnitNB(hdcbuffer, 0, 0, mapunit);
 	BitBlt(hdestdc, left, top, MU_SIZE, MU_SIZE, hdcbuffer, 0, 0, SRCCOPY);
 	DeleteObject(hdcbuffer);
 	DeleteObject(hbmbuffer);
 }
 
-void drawMapUnit(HDC hdestdc, int left, int top, int x, int y)
+void drawMapUnitNB(HDC hdestdc, int left, int top, byte mapunit)
 {
-	drawMapUnit(hdestdc, left, top, xy2index(x, y));
-}
-
-void drawMapUnitNB(HDC hdestdc, int left, int top, int index)
-{
-	switch (GETMUSTATE(Game.map[index])) {
+	switch (GETMUSTATE(mapunit)) {
 	case MUS_COVER:
 		drawMUCoverBg(hdestdc, left, top);
 		break;
@@ -833,8 +782,8 @@ void drawMapUnitNB(HDC hdestdc, int left, int top, int index)
 		drawMUMark(hdestdc, left, top, false);
 		break;
 	case MUS_UNCOV:
-		if (MUISMINE(Game.map[index])) drawMUMine(hdestdc, left, top, false);
-		else drawMUNum(hdestdc, left, top, GETMUMINES(Game.map[index]));
+		if (MUISMINE(mapunit)) drawMUMine(hdestdc, left, top, false);
+		else drawMUNum(hdestdc, left, top, GETMUMINES(mapunit));
 		break;
 	case MUS_BOMB:
 		drawMUMine(hdestdc, left, top, true);
@@ -846,9 +795,4 @@ void drawMapUnitNB(HDC hdestdc, int left, int top, int index)
 		drawMUCoverBg(hdestdc, left, top);
 		break;
 	}
-}
-
-void drawMapUnitNB(HDC hdestdc, int left, int top, int x, int y)
-{
-	drawMapUnitNB(hdestdc, left, top, xy2index(x, y));
 }

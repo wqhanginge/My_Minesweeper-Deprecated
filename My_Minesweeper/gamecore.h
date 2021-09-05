@@ -2,7 +2,7 @@
 
 /* 
  * this file contains the minesweeper core functions and data structure
- * all basic options are defined in this file
+ * all basic operations are defined in this file
  * you can read infomation from Game/Score struct by directly access its member
  * AND use defined functions to write/change it (RECOMMENDED)
  */
@@ -78,6 +78,7 @@
 #define MUISMINE(unit)			(((unit) & 0x0F) == MUM_MINE)
 #define SETMUUPDATE(unit)		unit |= MU_UPDATE
 #define REMMUUPDATE(unit)		unit &= (~MU_UPDATE)
+#define MUISUPDATE(unit)		((bool)((unit) & MU_UPDATE))
  //end Game Map Unit
 
 //Game Score
@@ -129,82 +130,113 @@ typedef int Neighbor[9];
 extern GameInfo Game;
 extern GameScore Score;
 
+/*        x
+ *      ----->
+ *       0   1   2   3
+ *     +---+---+---+---+
+ * y| 0| 0 | 1 | 2 | 3 |
+ *  |  +---+---+---+---+
+ *  v 1| 4 |...index...|
+ *     +---+---+---+---+
+ */
+
 //transform GameMap index-type into xy-type
 //start from 0, no check
 int index2x(int index);
 int index2y(int index);
+
 //transform GameMap xy-type into index-type
 //start from 0, no check
 int xy2index(int x, int y);
 
+
 //see detail in Type Neighbor's description
 //no arg check
 void getNeighbors(Neighbor &neighbor, int x, int y);
+
 //see detail in Type Neighbor's description
 //no arg check
 void getNeighbors(Neighbor &neighbor, int index);
+
 
 //it will set Game Mode with JUNIOR by default
 //CUSTOM is limited by MAX_WIDTH, MAX_HEIGHT, MAX_MINES and MIN_*** as well
 //won't set Update bit
 void setGameMode(byte mode, byte width = 0, byte height = 0, word mines = 0);
 
+
+//on/off Question Mark mode
+void setMark(bool enable);
+
+
 //change Game State
 //it will do nothing if a state is illegal
 //won't set Update bit
 void setGameState(byte state);
 
+
 //it will erase the GameMap
 //won't set Update bit
 void resetGame();
 
+
 //create a new GameMap
 //won't set Update bit
 void createGameMap(int x, int y);
+
 //create a new GameMap
 //won't set Update bit
 void createGameMap(int index);
+
 
 //click a unit in GameMap, return mines in neighbor, or return -1 if this unit is mine,
 //or return -2 if this unit can't be clicked
 //it will set Update bit before return
 int clickUnit(int x, int y);
+
 //click a unit in GameMap, return mines in neighbor, or return -1 if this unit is mine,
 //or return -2 if this unit can't be clicked
 //it will set Update bit before return
 int clickUnit(int index);
 
+
 //open all neighbors around a uncovered unit witch has 0 mines value
 //return 0 if no error, or -1 if error
 //it will set Update bit before return
 int openBlanks(int x, int y);
+
 //open all neighbors around a uncovered unit witch has 0 mines value
 //return 0 if no error, or -1 if error
 //it will set Update bit before return
 int openBlanks(int index);
 
+
 //open all neighbors around the open unit
 //return 0 if no error, or -1 if digged mine, or -2 if error
 //it will set Update bit before return
 int digNeighbors(int x, int y);
+
 //open all neighbors around the open unit
 //return 0 if no error, or -1 if digged mine, or -2 if error
 //it will set Update bit before return
 int digNeighbors(int index);
 
+
 //open all mines' positions after Game Fail
 //it will set Update bit before return
 void uncovAllMines();
+
 
 //reset all scores
 void resetRecord();
 
 //this function return -1 if error
 dword getRecordTime(byte gamemode);
+
 //this function return a TCHAR[SCORE_NAME_LEN] pointer,
 //you can directly edit Record content by this pointer
 //be careful with array bound
 TCHAR *getpRecordName(byte gamemode);
 
-//update best time
-void setRecordTime(byte gamemode);
+//update best time, do nothing if gamemode is illegal
+void setRecordTime(byte gamemode, word besttime);

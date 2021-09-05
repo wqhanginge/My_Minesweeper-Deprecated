@@ -2,7 +2,6 @@
 
 /* 
  * this file contains the Game UI design and basic drawing functions
- * Bitmap recources are loaded here
  * drawing functions use Win32 API
  * NOTE:almost all functions have no arg check process, use with care
  */
@@ -91,8 +90,11 @@
 #define COLOR_DEFSHADOW	RGB(128,128,128)
 #define COLOR_DEFSH		RGB(160,160,160)
 
+#define MAPUNITS_WIDTH	(Game.width * MU_SIZE)
+#define MAPUNITS_HEIGHT	(Game.height * MU_SIZE)
+
 //Info Part
-#define INFO_WIDTH	info_width()
+#define INFO_WIDTH	(PART_EDGE + MAPUNITS_WIDTH + PART_EDGE)
 #define INFO_HEIGHT	(PART_EDGE + 36 + PART_EDGE)
 #define INFO_LEFT	AREA_EDGE
 #define INFO_TOP	AREA_EDGE
@@ -130,11 +132,11 @@
 
 #define TIME_WIDTH	MINE_WIDTH
 #define TIME_HEIGHT	MINE_HEIGHT
-#define TIME_LEFT	time_left()
+#define TIME_LEFT	(INFO_LEFT + INFO_WIDTH - RIGHT_DIST - TIME_WIDTH)
 #define TIME_TOP	MINE_TOP
 #define TN_WIDTH	IN_WIDTH
 #define TN_HEIGHT	IN_HEIGHT
-#define TN_LEFT		timenums_left()
+#define TN_LEFT		(TIME_LEFT + IN_EDGE)
 #define TN_TOP		(TIME_TOP + IN_EDGE)
 
 #define COLOR_TIME	COLOR_MINE
@@ -142,9 +144,9 @@
 #define COLOR_TIMES	COLOR_MINES
 
 #define RB_SIZE		32
-#define RB_LEFT		rb_left()
+#define RB_LEFT		(INFO_LEFT + (INFO_WIDTH - RB_SIZE) / 2)
 #define RB_TOP		(INFO_TOP + PART_EDGE + 2)
-#define BMP_SIZE	(RB_SIZE - 4)
+#define BMP_SIZE	28
 #define BMP_LEFT	(RB_LEFT + 2)
 #define BMP_TOP		(RB_TOP + 2)
 
@@ -157,12 +159,12 @@
 
 //MapArea
 #define MAPAREA_WIDTH	INFO_WIDTH
-#define MAPAREA_HEIGHT	maparea_height()
+#define MAPAREA_HEIGHT	(PART_EDGE + MAPUNITS_HEIGHT + PART_EDGE)
 #define MAPAREA_LEFT	AREA_EDGE
 #define MAPAREA_TOP		(AREA_EDGE + INFO_HEIGHT + AREA_EDGE)
 
-#define MAP_WIDTH		map_width()
-#define MAP_HEIGHT		map_height()
+#define MAP_WIDTH		MAPUNITS_WIDTH
+#define MAP_HEIGHT		MAPUNITS_HEIGHT
 #define MAP_LEFT		(MAPAREA_LEFT + PART_EDGE)
 #define MAP_TOP			(MAPAREA_TOP + PART_EDGE)
 
@@ -194,8 +196,8 @@
 //end MapArea
 
 //Client Area
-#define CLIENT_WIDTH	client_width()
-#define CLIENT_HEIGHT	client_height()
+#define CLIENT_WIDTH	(AREA_EDGE + INFO_WIDTH + AREA_EDGE)
+#define CLIENT_HEIGHT	(AREA_EDGE + INFO_HEIGHT + AREA_EDGE + MAPAREA_HEIGHT + AREA_EDGE)
 #define CLIENT_LEFT		0
 #define CLIENT_TOP		0
 
@@ -212,31 +214,34 @@ const bool InfoNumBG[INFONUM_WIDTH][INFONUM_HEIGHT];
 */
 
 
-//get flexiable dialog's position
-int info_width();
-int time_left();
-int timenums_left();
-int rb_left();
-int map_width();
-int map_height();
-int maparea_height();
-int client_width();
-int client_height();
+/*        x
+ *      ----->
+ *       0   1   2   3
+ *     +---+---+---+---+ --
+ * y| 0| 0 | 1 | 2 | 3 |  h
+ *  |  +---+---+---+---+ --
+ *  v 1| 4 |...index...|
+ *     +---+---+---+---+
+ *     |<w>|
+ * px and py means positon in pixel on window
+ * x and y means position in unit on GameMap
+ * px = x * w, py = y * h, ppos = (px, py)
+ */
 
-//transform relative position on MapArea into GameMap index
-//use the first MapUnit left-top as position zero
+//transform pixels on MapArea into GameMap index
+//use the first MapUnit left-top as position 0
 //take care of the input, they must be offset of MAP_LEFT and MAP_TOP
-int rpos2index(int rleft, int rtop);
-int rleft2x(int rleft);
-int rtop2y(int rtop);
+int ppos2index(int px, int py);
+int px2x(int px);
+int py2y(int py);
 
-//transform a GameMap index into relative MapArea position
+//transform a GameMap index into MapArea pixels
 //use the first MapUnit left-top as position zero
 //take care of the output, they are offset of MAP_LEFT or MAP_TOP
-int index2rleft(int index);
-int index2rtop(int index);
-int x2rleft(int x);
-int y2rtop(int y);
+int index2px(int index);
+int index2py(int index);
+int x2px(int x);
+int y2py(int y);
 
 
 /* following functions draw specific bitmaps at appointed position */
@@ -413,6 +418,7 @@ void drawResetButtonBg(
 );
 
 //draw bitmap on Reset Button
+//it will do nothing if the hbm is NULL
 //w:BMP_SIZE, h:BMP_SIZE
 //no DC-Buffer
 void drawBmpOnResetButton(
@@ -423,7 +429,9 @@ void drawBmpOnResetButton(
 	_In_ bool clicked
 );
 
+
 //draw a Reset Button
+//use NULL for hbm if no bitmap
 //w:RB_SIZE, h:RB_SIZE
 void drawResetButton(
 	_In_ HDC hdestdc,
@@ -438,6 +446,7 @@ void drawResetButton(
 	_In_ COLORREF shadowhigh = COLOR_RBSH
 );
 //draw a Reset Button
+//use NULL for hbm if no bitmap
 //w:RB_SIZE, h:RB_SIZE
 //this function will draw on DC directly without creating a DC-buffer
 void drawResetButtonNB(
@@ -468,7 +477,7 @@ static void drawmuitemmark(
 	_In_ HDC hdestdc,
 	_In_ int left,
 	_In_ int top,
-	_In_ bool moved,
+	_In_ bool clicked,
 	_In_ COLORREF mark = COLOR_MUMARK
 );
 static void drawmuitemflag(
@@ -616,34 +625,22 @@ void drawMUNum(
 	_In_ COLORREF bgedge = COLOR_MUUNCOVE
 );
 
-//draw a mapunit depends on MapUnitState with default color
+//draw a mapunit depends on MapUnit data with default color
+//draw a covered mapunit by default
 //w:MU_SIZE, h:MU_SIZE
 void drawMapUnit(
 	_In_ HDC hdestdc,
 	_In_ int left,
 	_In_ int top,
-	_In_ int index
-);
-void drawMapUnit(
-	_In_ HDC hdestdc,
-	_In_ int left,
-	_In_ int top,
-	_In_ int x,
-	_In_ int y
+	_In_ byte mapunit
 );
 //draw a mapunit depends on MapUnitState with default color
+//draw a covered mapunit by default
 //this function will draw on DC directly without creating a DC-buffer
 //w:MU_SIZE, h:MU_SIZE
 void drawMapUnitNB(
 	_In_ HDC hdestdc,
 	_In_ int left,
 	_In_ int top,
-	_In_ int index
-);
-void drawMapUnitNB(
-	_In_ HDC hdestdc,
-	_In_ int left,
-	_In_ int top,
-	_In_ int x,
-	_In_ int y
+	_In_ byte mapunit
 );

@@ -97,6 +97,11 @@ void setGameMode(byte mode, byte width/*=0*/, byte height/*=0*/, word mines/*=0*
 	}
 }
 
+void setMark(bool enable)
+{
+	Game.mark = enable;
+}
+
 void setGameState(byte state)
 {
 	if (state >= UNKNOW) return;
@@ -282,17 +287,17 @@ TCHAR *getpRecordName(byte gamemode)
 	return nullptr;
 }
 
-void setRecordTime(byte gamemode)
+void setRecordTime(byte gamemode, word besttime)
 {
 	switch (gamemode) {
 	case JUNIOR:
-		Score.junior_time = Game.time;
+		Score.junior_time = besttime;
 		break;
 	case MIDDLE:
-		Score.middle_time = Game.time;
+		Score.middle_time = besttime;
 		break;
 	case SENIOR:
-		Score.senior_time = Game.time;
+		Score.senior_time = besttime;
 		break;
 	default:
 		break;

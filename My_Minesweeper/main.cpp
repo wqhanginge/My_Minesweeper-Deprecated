@@ -27,7 +27,7 @@ HBITMAP hbm_rb, hbm_click, hbm_fail, hbm_success;
 
 INT_PTR CALLBACK AboutProc(HWND habout, UINT msg, WPARAM wparam, LPARAM lparam) {
 	static HWND htext;
-	TCHAR aboutinfo[ABOUTINFOLEN];
+	TCHAR aboutinfo[ABOUT_INFO_LEN];
 
 	switch (msg) {
 	case WM_INITDIALOG:
@@ -35,8 +35,8 @@ INT_PTR CALLBACK AboutProc(HWND habout, UINT msg, WPARAM wparam, LPARAM lparam) 
 		htext = FindWindowEx(habout, NULL, TEXT("STATIC"), NULL);
 
 		//show about information
-		_tcscpy_s(aboutinfo, ABOUTINFOLEN, TEXT(ABOUTTEXT));
-		getversion(&aboutinfo[_tcslen(aboutinfo)], ABOUTINFOLEN - _tcslen(aboutinfo));
+		_tcscpy_s(aboutinfo, ABOUT_INFO_LEN, TEXT(ABOUT_TEXT));
+		getVersion(&aboutinfo[_tcslen(aboutinfo)], ABOUT_INFO_LEN - _tcslen(aboutinfo));
 		SetWindowText(htext, aboutinfo);
 		break;
 	case WM_CLOSE:
@@ -59,7 +59,7 @@ INT_PTR CALLBACK AboutProc(HWND habout, UINT msg, WPARAM wparam, LPARAM lparam) 
 
 INT_PTR CALLBACK RecordProc(HWND hrecord, UINT msg, WPARAM wparam, LPARAM lparam) {
 	static HWND hjt, hmt, hst, hjn, hmn, hsn;
-	TCHAR timebuffer[TIMESTRLEN];
+	TCHAR timebuffer[TIME_STRLEN];
 
 	switch (msg) {
 	case WM_INITDIALOG:
@@ -72,11 +72,14 @@ INT_PTR CALLBACK RecordProc(HWND hrecord, UINT msg, WPARAM wparam, LPARAM lparam
 		hsn = FindWindowEx(hrecord, hmn, TEXT("STATIC"), NULL);
 
 		//init static control show
-		maketimestr(timebuffer, Score.junior_time);
+		StringCchPrintf(timebuffer, TIME_STRLEN, TEXT("%d"), Score.junior_time);
+		_tcsncat_s(timebuffer, TIME_STRLEN, TEXT(DEF_TIMEUNIT_EN), _TRUNCATE);
 		SetWindowText(hjt, timebuffer);
-		maketimestr(timebuffer, Score.middle_time);
+		StringCchPrintf(timebuffer, TIME_STRLEN, TEXT("%d"), Score.middle_time);
+		_tcsncat_s(timebuffer, TIME_STRLEN, TEXT(DEF_TIMEUNIT_EN), _TRUNCATE);
 		SetWindowText(hmt, timebuffer);
-		maketimestr(timebuffer, Score.senior_time);
+		StringCchPrintf(timebuffer, TIME_STRLEN, TEXT("%d"), Score.senior_time);
+		_tcsncat_s(timebuffer, TIME_STRLEN, TEXT(DEF_TIMEUNIT_EN), _TRUNCATE);
 		SetWindowText(hst, timebuffer);
 		SetWindowText(hjn, Score.junior_name);
 		SetWindowText(hmn, Score.middle_name);
@@ -90,7 +93,8 @@ INT_PTR CALLBACK RecordProc(HWND hrecord, UINT msg, WPARAM wparam, LPARAM lparam
 		case IDRESET:
 			//reset the record
 			resetRecord();
-			maketimestr(timebuffer, MAX_TIME);
+			StringCchPrintf(timebuffer, TIME_STRLEN, TEXT("%d"), MAX_TIME);
+			_tcsncat_s(timebuffer, TIME_STRLEN, TEXT(DEF_TIMEUNIT_EN), _TRUNCATE);
 			SetWindowText(hjt, timebuffer);
 			SetWindowText(hmt, timebuffer);
 			SetWindowText(hst, timebuffer);
@@ -208,25 +212,25 @@ void MenuProc(WPARAM wparam) {
 		break;
 	case ID_GAME_JUNIOR:
 		//change game mode
-		changechecked(JUNIOR);
+		setMenuChecked(JUNIOR);
 		PostMessage(hWnd, WM_GAMEMODECHG, JUNIOR, 0);
 		break;
 	case ID_GAME_MIDDLE:
-		changechecked(MIDDLE);
+		setMenuChecked(MIDDLE);
 		PostMessage(hWnd, WM_GAMEMODECHG, MIDDLE, 0);
 		break;
 	case ID_GAME_SENIOR:
-		changechecked(SENIOR);
+		setMenuChecked(SENIOR);
 		PostMessage(hWnd, WM_GAMEMODECHG, SENIOR, 0);
 		break;
 	case ID_GAME_CUSTOM:
-		changechecked(CUSTOM);
+		setMenuChecked(CUSTOM);
 		DialogBox(hInst, MAKEINTRESOURCE(IDD_CUSTOM), hWnd, CustomProc);
 		break;
 	case ID_GAME_MARK:
 		//enable ro disable Mark
 		Game.mark = !Game.mark;
-		changemark(Game.mark);
+		setQMarkChecked(Game.mark);
 		break;
 	case ID_GAME_RECORD:
 		//show records
@@ -274,12 +278,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		GetEnvironmentVariable(TEXT(DEF_FILEPATH_EV), buffer, MAX_PATH);
 		_tcscat_s(buffer, TEXT("\\"));
 		_tcscat_s(buffer, TEXT(DEF_FILENAME));
-		initgame(buffer, wndpos);
+		initGame(buffer, wndpos);
 		simlogistic((dword)time(nullptr));
 
 		//init menu info
-		changechecked(Game.mode);
-		changemark(Game.mark);
+		setMenuChecked(Game.mode);
+		setQMarkChecked(Game.mark);
 
 		//create reset button
 		hresetb = CreateWindowEx(0, TEXT("BUTTON"), TEXT(BUTTONNAME),
@@ -311,7 +315,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		//save game info
 		GetWindowRect(hwnd, &wndrect);
 		wndpos = { wndrect.left,wndrect.top };
-		savegame(buffer, wndpos);
+		saveGame(buffer, wndpos);
 
 		PostQuitMessage(0);
 		break;
@@ -330,7 +334,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		drawINNB(hdcbuffer, IMNSLEFT, IMNSTOP, Game.mine_remains);
 		drawINNB(hdcbuffer, TIMENUMS_LEFT, ITNSTOP, Game.time);
 		memset(Game.mapchange, 1, sizeof(bool)*Game.size);
-		paintmapNB(hdcbuffer, MAPUNITSLEFT, MAPUNITSTOP);
+		paintMapNB(hdcbuffer, MAPUNITSLEFT, MAPUNITSTOP);
 
 		BitBlt(hpaintdc, 0, 0, CLIENT_WIDTH, CLIENT_HEIGHT, hdcbuffer, 0, 0, SRCCOPY);
 		DeleteObject(hbmbuffer);
@@ -364,7 +368,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		if (Game.mines == Game.size - Game.uncov_units)
 			PostMessage(hwnd, WM_GAMESUCCESS, 0, 0);
 		else
-			paintmap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
+			paintMap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
 		break;
 	case WM_GAMEFAIL:
 		KillTimer(hwnd, GAMETIMERID);
@@ -372,7 +376,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_fail);
 		//show all mines positions when game set
 		uncovAllMines();
-		paintmap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
+		paintMap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
 		break;
 	case WM_GAMESUCCESS:
 		KillTimer(hwnd, GAMETIMERID);
@@ -382,7 +386,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		Game.mine_remains = 0;
 		drawIN(hdc, IMNSLEFT, IMNSTOP, 0);
 		uncovAllMines();
-		paintmap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
+		paintMap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
 		//if break record
 		if (IS_STANDARD(Game.mode) && Game.time < getRecordTime()) {
 			setRecordTime();
@@ -412,16 +416,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_click);
 
 		//break when not in the map area
-		if (!lparamispos(lparam)) break;
-		index = lparamtoindex(lparam);
+		if (!lparamIsInPos(lparam)) break;
+		index = lparam2index(lparam);
 		if (wparam & MK_RBUTTON) {	//double buttons down
 			lastdoublemb = true;
 			getNeighbors(indexes, index);
-			showclickdown(hdc, MAPUNITSLEFT, MAPUNITSTOP, indexes);
+			showClickedMapUnit(hdc, MAPUNITSLEFT, MAPUNITSTOP, indexes);
 		}
 		else {	//single button
 			lastdoublemb = false;
-			showclickdown(hdc, MAPUNITSLEFT, MAPUNITSTOP, index);
+			showClickedMapUnit(hdc, MAPUNITSLEFT, MAPUNITSTOP, index);
 		}
 		break;
 	case WM_LBUTTONUP:
@@ -432,8 +436,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_rb);
 
 		//break when not in the map area
-		if (!lparamispos(lparam)) break;
-		index = lparamtoindex(lparam);
+		if (!lparamIsInPos(lparam)) break;
+		index = lparam2index(lparam);
 		if (wparam & MK_RBUTTON) {	//double buttons
 			lastdoublemb = true;
 			int ret = digNeighbors(index);
@@ -444,7 +448,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 				PostMessage(hwnd, WM_GAMESUCCESS, 0, 0);
 			}
 			else
-				paintmap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
+				paintMap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
 		}
 		else if (!lastdoublemb) {	//single button and last was not double button
 			lastdoublemb = false;
@@ -461,12 +465,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 					PostMessage(hwnd, WM_GAMESUCCESS, 0, 0);
 				}
 				else
-					paintmap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
+					paintMap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
 			}
 		}
 		else {	//single button and last was double button
 			lastdoublemb = false;
-			paintmap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
+			paintMap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
 		}
 		break;
 	case WM_RBUTTONDOWN:
@@ -474,38 +478,38 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		if (Game.state == FAIL || Game.state == SUCCESS) break;
 
 		//break when not in the map area
-		if (!lparamispos(lparam)) break;
-		index = lparamtoindex(lparam);
+		if (!lparamIsInPos(lparam)) break;
+		index = lparam2index(lparam);
 		if (wparam & MK_LBUTTON) {	//double buttons
 			lastdoublemb = true;
 			PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_click);
 			getNeighbors(indexes, index);
-			showclickdown(hdc, MAPUNITSLEFT, MAPUNITSTOP, indexes);
+			showClickedMapUnit(hdc, MAPUNITSLEFT, MAPUNITSTOP, indexes);
 		}
 		else {	//single button, flag a unit or mark a unit
 			lastdoublemb = false;
 			if (GETMUSTATE(Game.map[index]) == MUS_COVER) {
 				SETMUSTATE(MUS_FLAG, Game.map[index]);
-				drawMapUnit(hdc, MAPUNITSLEFT + index2rleft(index), MAPUNITSTOP + index2rtop(index), index);
+				drawMapUnit(hdc, MAPUNITSLEFT + index2px(index), MAPUNITSTOP + index2py(index), index);
 				Game.mine_remains--;
 				drawIN(hdc, IMNSLEFT, IMNSTOP, Game.mine_remains);
 			}
 			else if (GETMUSTATE(Game.map[index]) == MUS_FLAG && Game.mark) {
 				SETMUSTATE(MUS_MARK, Game.map[index]);
-				drawMapUnit(hdc, MAPUNITSLEFT + index2rleft(index), MAPUNITSTOP + index2rtop(index), index);
+				drawMapUnit(hdc, MAPUNITSLEFT + index2px(index), MAPUNITSTOP + index2py(index), index);
 				Game.mine_remains++;
 				drawIN(hdc, IMNSLEFT, IMNSTOP, Game.mine_remains);
 			}
 			else if (GETMUSTATE(Game.map[index]) == MUS_FLAG && !Game.mark)
 			{
 				SETMUSTATE(MUS_COVER, Game.map[index]);
-				drawMapUnit(hdc, MAPUNITSLEFT + index2rleft(index), MAPUNITSTOP + index2rtop(index), index);
+				drawMapUnit(hdc, MAPUNITSLEFT + index2px(index), MAPUNITSTOP + index2py(index), index);
 				Game.mine_remains++;
 				drawIN(hdc, IMNSLEFT, IMNSTOP, Game.mine_remains);
 			}
 			else if (GETMUSTATE(Game.map[index]) == MUS_MARK) {
 				SETMUSTATE(MUS_COVER, Game.map[index]);
-				drawMapUnit(hdc, MAPUNITSLEFT + index2rleft(index), MAPUNITSTOP + index2rtop(index), index);
+				drawMapUnit(hdc, MAPUNITSLEFT + index2px(index), MAPUNITSTOP + index2py(index), index);
 			}
 		}
 		break;
@@ -517,8 +521,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		PostMessage(hresetb, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hbm_rb);
 
 		//break when not in the map area
-		if (!lparamispos(lparam)) break;
-		index = lparamtoindex(lparam);
+		if (!lparamIsInPos(lparam)) break;
+		index = lparam2index(lparam);
 		if (wparam & MK_LBUTTON) {	//double buttons
 			lastdoublemb = true;
 			int ret = digNeighbors(index);
@@ -529,7 +533,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 				PostMessage(hwnd, WM_GAMESUCCESS, 0, 0);
 			}
 			else
-				paintmap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
+				paintMap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
 		}
 		else	//single button
 			lastdoublemb = false;
@@ -540,24 +544,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		if (Game.state == FAIL || Game.state == SUCCESS) break;
 
 		//break when not in the map area
-		if (!lparamispos(lparam)) {
-			paintmap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
+		if (!lparamIsInPos(lparam)) {
+			paintMap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
 			break;
 		}
-		index = lparamtoindex(lparam);
+		index = lparam2index(lparam);
 		if (wparam & MK_LBUTTON) {	//with left button down
 			if (wparam & MK_RBUTTON) {	//double buttons
 				Neighbor indexes;
 				getNeighbors(indexes, index);
-				showclickdown(hdc, MAPUNITSLEFT, MAPUNITSTOP, indexes);
+				showClickedMapUnit(hdc, MAPUNITSLEFT, MAPUNITSTOP, indexes);
 			}
 			//single button
 			else
-				showclickdown(hdc, MAPUNITSLEFT, MAPUNITSTOP, index);
+				showClickedMapUnit(hdc, MAPUNITSLEFT, MAPUNITSTOP, index);
 		}
 		//without mouse button down
 		else
-			paintmap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
+			paintMap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
 		break;
 	case WM_TIMER:
 		if (Game.time <= MAX_TIME) {
