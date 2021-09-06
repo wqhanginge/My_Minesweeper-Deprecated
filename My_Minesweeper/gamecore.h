@@ -16,8 +16,7 @@
 #define SENIOR	2
 #define CUSTOM	3
 #define CRUSH	4
-#define IS_STANDARD(Mode)	((byte)(Mode) < CUSTOM)
-#define IS_CRUSH(Mode)		((byte)(Mode) >= CRUSH)
+#define ISCRUSH(Mode)	((byte)(Mode) >= CRUSH)
 
 #define JUNIOR_WIDTH	9
 #define JUNIOR_HEIGHT	9
@@ -34,14 +33,14 @@
 #define SENIOR_SIZE		(SENIOR_WIDTH * SENIOR_HEIGHT)
 #define SENIOR_MINES	99
 
-#define MAX_WIDTH	30
-#define MAX_HEIGHT	24
-#define MAX_SIZE	(MAX_WIDTH * MAX_HEIGHT)
+#define MAX_WIDTH		30
+#define MAX_HEIGHT		24
+#define MAX_SIZE		(MAX_WIDTH * MAX_HEIGHT)
 #define MAX_MINES(Size)	((word)((word)(Size) * 9 / 10))
-#define MIN_WIDTH	9
-#define MIN_HEIGHT	9
-#define MIN_SIZE	(MIN_WIDTH * MIN_HEIGHT)
-#define MIN_MINES	10
+#define MIN_WIDTH		9
+#define MIN_HEIGHT		9
+#define MIN_SIZE		(MIN_WIDTH * MIN_HEIGHT)
+#define MIN_MINES		10
 //end Game Modes
 
 //Game States
@@ -82,7 +81,7 @@
  //end Game Map Unit
 
 //Game Score
-#define SCORE_NAME_LEN	20
+#define SCORE_NAME_LEN		20
 #define DEF_SCORE_NAME_EN	"anonymous"
 #define DEF_SCORE_NAME_CH	"ÄäÃû"
 

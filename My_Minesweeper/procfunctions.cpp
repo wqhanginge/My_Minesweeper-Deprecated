@@ -1,5 +1,9 @@
 #include "procfunctions.h"
 
+HBITMAP hbm_rb, hbm_click, hbm_fail, hbm_success;
+HBITMAP& hbm_current = hbm_rb;
+
+
 bool lparamIsInPos(LPARAM lparam)
 {
 	POINTS p = MAKEPOINTS(lparam);
@@ -12,22 +16,6 @@ int lparam2index(LPARAM lparam)
 	POINTS p = MAKEPOINTS(lparam);
 	return ppos2index(p.x - MAP_LEFT, p.y - MAP_TOP);
 }
-//
-//int str2dword(dword& x, TCHAR* str, dword size)
-//{
-//	x = 0;
-//	for (dword i = 0; i < _tcslen(str) && str[i] != TEXT('\0'); i++) {
-//		if (str[i] < TEXT('0') || str[i] > TEXT('9')) return -1;
-//		x = x * 10 + str[i] - TEXT('0');
-//	}
-//	return 0;
-//}
-//
-//int dword2str(TCHAR *str, dword len, dword x)
-//{
-//	StringCchPrintf(str, len, TEXT("%d"), x);
-//	return _tcslen(str);
-//}
 
 void loadBitmaps()
 {
@@ -170,12 +158,7 @@ void setQMarkChecked(bool Mark)
 	mii.fState = (Mark) ? MFS_CHECKED : MFS_UNCHECKED;
 	SetMenuItemInfo(hMenu, ID_GAME_MARK, FALSE, &mii);
 }
-//
-//int maketimestr(TCHAR* buffer, int size, dword time, const TCHAR* timeunit/*=DEF_TIMEUNIT_EN*/)
-//{
-//	if (size < 2) return 0;
-//	return (int)_tcslen(buffer);
-//}
+
 
 void initGame(TCHAR* Path, POINT &lastwndpos)
 {
@@ -202,34 +185,34 @@ void initGame(TCHAR* Path, POINT &lastwndpos)
 void saveGame(TCHAR* Path, POINT &wndpos)
 {
 	TCHAR str[CONTENT_STRLEN];
-	StringCchPrintf(str, CONTENT_STRLEN, TEXT("%d"), wndpos.x);
+	tcsprintf(str, CONTENT_STRLEN, TEXT("%d"), wndpos.x);
 	WritePrivateProfileString(TEXT(INIT_ANAME), TEXT(INIT_XPOS), str, Path);
-	StringCchPrintf(str, CONTENT_STRLEN, TEXT("%d"), wndpos.y);
+	tcsprintf(str, CONTENT_STRLEN, TEXT("%d"), wndpos.y);
 	WritePrivateProfileString(TEXT(INIT_ANAME), TEXT(INIT_YPOS), str, Path);
 
-	StringCchPrintf(str, CONTENT_STRLEN, TEXT("%d"), Game.mode);
+	tcsprintf(str, CONTENT_STRLEN, TEXT("%d"), Game.mode);
 	WritePrivateProfileString(TEXT(INIT_ANAME), TEXT(INIT_MODE), str, Path);
-	StringCchPrintf(str, CONTENT_STRLEN, TEXT("%d"), Game.width);
+	tcsprintf(str, CONTENT_STRLEN, TEXT("%d"), Game.width);
 	WritePrivateProfileString(TEXT(INIT_ANAME), TEXT(INIT_WIDTH), str, Path);
-	StringCchPrintf(str, CONTENT_STRLEN, TEXT("%d"), Game.height);
+	tcsprintf(str, CONTENT_STRLEN, TEXT("%d"), Game.height);
 	WritePrivateProfileString(TEXT(INIT_ANAME), TEXT(INIT_HEIGHT), str, Path);
-	StringCchPrintf(str, CONTENT_STRLEN, TEXT("%d"), Game.mines);
+	tcsprintf(str, CONTENT_STRLEN, TEXT("%d"), Game.mines);
 	WritePrivateProfileString(TEXT(INIT_ANAME), TEXT(INIT_MINES), str, Path);
-	StringCchPrintf(str, CONTENT_STRLEN, TEXT("%d"), Game.mark);
+	tcsprintf(str, CONTENT_STRLEN, TEXT("%d"), Game.mark);
 	WritePrivateProfileString(TEXT(INIT_ANAME), TEXT(INIT_MARK), str, Path);
 
-	StringCchPrintf(str, CONTENT_STRLEN, TEXT("%d"), Score.junior_time);
+	tcsprintf(str, CONTENT_STRLEN, TEXT("%d"), Score.junior_time);
 	WritePrivateProfileString(TEXT(SCORE_ANAME), TEXT(SCORE_JTIME), str, Path);
 	WritePrivateProfileString(TEXT(SCORE_ANAME), TEXT(SCORE_JNAME), Score.junior_name, Path);
-	StringCchPrintf(str, CONTENT_STRLEN, TEXT("%d"), Score.middle_time);
+	tcsprintf(str, CONTENT_STRLEN, TEXT("%d"), Score.middle_time);
 	WritePrivateProfileString(TEXT(SCORE_ANAME), TEXT(SCORE_MTIME), str, Path);
 	WritePrivateProfileString(TEXT(SCORE_ANAME), TEXT(SCORE_MNAME), Score.middle_name, Path);
-	StringCchPrintf(str, CONTENT_STRLEN, TEXT("%d"), Score.senior_time);
+	tcsprintf(str, CONTENT_STRLEN, TEXT("%d"), Score.senior_time);
 	WritePrivateProfileString(TEXT(SCORE_ANAME), TEXT(SCORE_STIME), str, Path);
 	WritePrivateProfileString(TEXT(SCORE_ANAME), TEXT(SCORE_SNAME), Score.senior_name, Path);
 }
 
-void getVersion(TCHAR* version, int size_in_ch)
+void getVersion(TCHAR* version, size_t size_in_ch)
 {
 	memset(version, 0, sizeof(TCHAR) * size_in_ch);
 	TCHAR szAppFullPath[MAX_PATH] = { 0 };
@@ -247,12 +230,231 @@ void getVersion(TCHAR* version, int size_in_ch)
 		if (nLen)
 		{
 			//get file version and print as x.x.x.x form
-			StringCchPrintf(version, size_in_ch, TEXT("%d.%d.%d.%d"),
+			tcsprintf(version, size_in_ch, TEXT("%d.%d.%d.%d"),
 				HIWORD(pFileInfo->dwFileVersionMS),
 				LOWORD(pFileInfo->dwFileVersionMS),
 				HIWORD(pFileInfo->dwFileVersionLS),
 				LOWORD(pFileInfo->dwFileVersionLS));
 		}
 		delete pszAppVersion;
+	}
+}
+
+
+/* Proc Functions */
+
+INT_PTR CALLBACK AboutProc(HWND habout, UINT msg, WPARAM wparam, LPARAM lparam)
+{
+	HWND htext;
+	TCHAR aboutinfo[ABOUT_INFO_LEN];
+
+	switch (msg) {
+	case WM_INITDIALOG:
+		//get text handel
+		htext = FindWindowEx(habout, NULL, TEXT("STATIC"), NULL);
+		
+		//show program description
+		_tcscpy_s(aboutinfo, ABOUT_INFO_LEN, TEXT(ABOUT_TEXT));
+		getVersion(&aboutinfo[_tcslen(aboutinfo)], ABOUT_INFO_LEN - _tcslen(aboutinfo));
+		SetWindowText(htext, aboutinfo);
+		break;
+	case WM_CLOSE:
+		EndDialog(habout, 0);
+		break;
+	case WM_COMMAND:
+		if (LOWORD(wparam) == IDOK) EndDialog(habout, 0);
+		break;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
+INT_PTR CALLBACK RecordProc(HWND hrecord, UINT msg, WPARAM wparam, LPARAM lparam)
+{
+	static HWND hjt, hmt, hst, hjn, hmn, hsn;
+	TCHAR strbuffer[TIME_STRLEN];
+
+	switch (msg) {
+	case WM_INITDIALOG:
+		//get static handels
+		hjt = FindWindowEx(hrecord, NULL, TEXT("STATIC"), NULL);
+		hmt = FindWindowEx(hrecord, hjt, TEXT("STATIC"), NULL);
+		hst = FindWindowEx(hrecord, hmt, TEXT("STATIC"), NULL);
+		hjn = FindWindowEx(hrecord, hst, TEXT("STATIC"), NULL);
+		hmn = FindWindowEx(hrecord, hjn, TEXT("STATIC"), NULL);
+		hsn = FindWindowEx(hrecord, hmn, TEXT("STATIC"), NULL);
+
+		//init static control show
+		tcsprintf(strbuffer, TIME_STRLEN, TEXT("%d"), Score.junior_time);
+		_tcsncat_s(strbuffer, TIME_STRLEN, TEXT(DEF_TIMEUNIT_EN), _TRUNCATE);
+		SetWindowText(hjt, strbuffer);
+		tcsprintf(strbuffer, TIME_STRLEN, TEXT("%d"), Score.middle_time);
+		_tcsncat_s(strbuffer, TIME_STRLEN, TEXT(DEF_TIMEUNIT_EN), _TRUNCATE);
+		SetWindowText(hmt, strbuffer);
+		tcsprintf(strbuffer, TIME_STRLEN, TEXT("%d"), Score.senior_time);
+		_tcsncat_s(strbuffer, TIME_STRLEN, TEXT(DEF_TIMEUNIT_EN), _TRUNCATE);
+		SetWindowText(hst, strbuffer);
+		SetWindowText(hjn, Score.junior_name);
+		SetWindowText(hmn, Score.middle_name);
+		SetWindowText(hsn, Score.senior_name);
+		break;
+	case WM_CLOSE:
+		EndDialog(hrecord, 0);
+		break;
+	case WM_COMMAND:
+		switch (LOWORD(wparam)) {
+		case IDRESET:
+			//reset the record
+			resetRecord();
+			tcsprintf(strbuffer, TIME_STRLEN, TEXT("%d"), MAX_TIME);
+			_tcsncat_s(strbuffer, TIME_STRLEN, TEXT(DEF_TIMEUNIT_EN), _TRUNCATE);
+			SetWindowText(hjt, strbuffer);
+			SetWindowText(hmt, strbuffer);
+			SetWindowText(hst, strbuffer);
+			SetWindowText(hjn, TEXT(DEF_SCORE_NAME_EN));
+			SetWindowText(hmn, TEXT(DEF_SCORE_NAME_EN));
+			SetWindowText(hsn, TEXT(DEF_SCORE_NAME_EN));
+			break;
+		case IDOK:
+			EndDialog(hrecord, 0);
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
+INT_PTR CALLBACK GetNameProc(HWND hgetname, UINT msg, WPARAM wparam, LPARAM lparam) {
+	static HWND heditname;
+
+	switch (msg) {
+	case WM_INITDIALOG:
+		//get edit control handle and init default presentation
+		heditname = FindWindowEx(hgetname, NULL, TEXT("EDIT"), NULL);
+		SetWindowText(heditname, getpRecordName(Game.mode));
+		SendMessage(heditname, EM_LIMITTEXT, NAME_EDIT_LEN - 1, 0);
+		SendMessage(heditname, EM_SETSEL, 0, -1);
+		SetFocus(heditname);
+		break;
+	case WM_DESTROY:
+		//get what writen in the edit control when exit dialog
+		GetWindowText(heditname, getpRecordName(Game.mode), NAME_EDIT_LEN);
+		break;
+	case WM_COMMAND:
+		if (LOWORD(wparam) == IDC_OK) EndDialog(hgetname, 0);
+		break;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
+INT_PTR CALLBACK CustomProc(HWND hcustom, UINT msg, WPARAM wparam, LPARAM lparam) {
+	static HWND heditw, hedith, heditm;
+	TCHAR str[CUSTOM_EDIT_LEN];
+	static dword width, height, mines;
+
+	switch (msg) {
+	case WM_INITDIALOG:
+		//get edit control handle
+		heditw = FindWindowEx(hcustom, NULL, TEXT("EDIT"), NULL);
+		hedith = FindWindowEx(hcustom, heditw, TEXT("EDIT"), NULL);
+		heditm = FindWindowEx(hcustom, hedith, TEXT("EDIT"), NULL);
+
+		//copy to buffer
+		width = Game.width;
+		height = Game.height;
+		mines = Game.mines;
+
+		//init edit control show
+		tcsprintf(str, CUSTOM_EDIT_LEN, TEXT("%ud"), width);
+		SetWindowText(heditw, str);
+		tcsprintf(str, CUSTOM_EDIT_LEN, TEXT("%ud"), height);
+		SetWindowText(hedith, str);
+		tcsprintf(str, CUSTOM_EDIT_LEN, TEXT("%ud"), mines);
+		SetWindowText(heditm, str);
+		break;
+	case WM_CLOSE:
+		EndDialog(hcustom, 0);
+		break;
+	case WM_DESTROY:
+		//set game mode when exit dialog
+		PostMessage(hWnd, WM_GAMEMODECHG, CUSTOM, MAKECHGLPARAM(width, height, mines));
+		break;
+	case WM_COMMAND:
+		switch (LOWORD(wparam)) {
+		case IDOK:
+			//get what int edit control when click OK
+			GetWindowText(heditw, str, CUSTOM_EDIT_LEN);
+			tcsscanf_s(str, TEXT("%ud"), &width);
+			GetWindowText(hedith, str, CUSTOM_EDIT_LEN);
+			tcsscanf_s(str, TEXT("%ud"), &height);
+			GetWindowText(heditm, str, CUSTOM_EDIT_LEN);
+			tcsscanf_s(str, TEXT("%ud"), &mines);
+			EndDialog(hcustom, 0);
+			break;
+		case IDCANCEL:
+			EndDialog(hcustom, 0);
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
+
+/* message response functions */
+
+int onMenu(WPARAM wparam) {
+	MENUITEMINFO mii = { sizeof(MENUITEMINFO) };
+
+	switch (LOWORD(wparam)) {
+	case ID_GAME_START:
+		PostMessage(hWnd, WM_GAMERESET, 0, 0);
+		break;
+	case ID_GAME_JUNIOR:
+		//change game mode
+		setMenuChecked(JUNIOR);
+		PostMessage(hWnd, WM_GAMEMODECHG, JUNIOR, 0);
+		break;
+	case ID_GAME_MIDDLE:
+		setMenuChecked(MIDDLE);
+		PostMessage(hWnd, WM_GAMEMODECHG, MIDDLE, 0);
+		break;
+	case ID_GAME_SENIOR:
+		setMenuChecked(SENIOR);
+		PostMessage(hWnd, WM_GAMEMODECHG, SENIOR, 0);
+		break;
+	case ID_GAME_CUSTOM:
+		setMenuChecked(CUSTOM);
+		DialogBox(hInst, MAKEINTRESOURCE(IDD_CUSTOM), hWnd, CustomProc);
+		break;
+	case ID_GAME_MARK:
+		//enable/disable Question Mark mode
+		setMark(!Game.mark);
+		setQMarkChecked(Game.mark);
+		break;
+	case ID_GAME_RECORD:
+		//show records
+		DialogBox(hInst, MAKEINTRESOURCE(IDD_RECORD), hWnd, RecordProc);
+		break;
+	case ID_GAME_EXIT:
+		PostMessage(hWnd, WM_CLOSE, 0, 0);
+		break;
+	case ID_ABOUT:
+		//show about infomation
+		DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUT), hWnd, AboutProc);
+		break;
+	default:
+		break;
 	}
 }

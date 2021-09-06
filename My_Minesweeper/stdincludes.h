@@ -1,7 +1,9 @@
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN
+#ifndef UNICODE
 #define UNICODE
+#endif
 
 #include <Windows.h>
 #include <tchar.h>
@@ -19,6 +21,9 @@ typedef unsigned short word;
 typedef unsigned dword;
 
 
-extern HINSTANCE hInst;	//the program istance handle
-extern HWND hWnd;
-extern HMENU hMenu;
+#ifdef UNICODE
+#define tcsscanf_s	swscanf_s
+#else
+#define tcsscanf_s	swscanf_s
+#endif
+#define tcsprintf StringCchPrintf

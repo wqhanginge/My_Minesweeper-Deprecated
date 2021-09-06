@@ -3,250 +3,12 @@
 #include "userinterface.h"
 #include "procfunctions.h"
 
-#define WM_GAMERESET	(WM_APP + 0)		//sent when game needs reset
-#define WM_GAMESUCCESS	(WM_APP + 1)		//sent when game is succeed
-#define WM_GAMEFAIL		(WM_APP + 2)		//sent when game is failed
-#define WM_GAMESTART	(WM_APP + 3)		//sent when game needs start, use lparam as start position
-//sent when game mode needs change,
-//use wparam as new GameMode,
-//use lparam as new width
-#define WM_GAMEMODECHG	(WM_APP + 4)
-#define MAKECHGLPARAM(w, h, m)	((LPARAM)((((dword)(w) & 0xFF) | (((dword)(h) & 0xFF) << 8)) | (((dword)(m) & 0xFFFF) << 16)))
-#define GETCHGWIDTH(l)			((byte)((dword)(l) & 0xFF))
-#define GETCHGHEIGHT(l)			((byte)(((dword)(l) >> 8) & 0xFF))
-#define GETCHGMINES(l)			((word)(((dword)(l) >> 16) & 0xFFFF))
-
 #define ID_RESETB	50000
 
 HINSTANCE hInst;
 HWND hWnd;
 HMENU hMenu;
 
-HBITMAP hbm_rb, hbm_click, hbm_fail, hbm_success;
-
-
-INT_PTR CALLBACK AboutProc(HWND habout, UINT msg, WPARAM wparam, LPARAM lparam) {
-	static HWND htext;
-	TCHAR aboutinfo[ABOUT_INFO_LEN];
-
-	switch (msg) {
-	case WM_INITDIALOG:
-		//get text handel
-		htext = FindWindowEx(habout, NULL, TEXT("STATIC"), NULL);
-
-		//show about information
-		_tcscpy_s(aboutinfo, ABOUT_INFO_LEN, TEXT(ABOUT_TEXT));
-		getVersion(&aboutinfo[_tcslen(aboutinfo)], ABOUT_INFO_LEN - _tcslen(aboutinfo));
-		SetWindowText(htext, aboutinfo);
-		break;
-	case WM_CLOSE:
-		EndDialog(habout, 0);
-		break;
-	case WM_COMMAND:
-		switch (LOWORD(wparam)) {
-		case IDOK:
-			EndDialog(habout, 0);
-			break;
-		default:
-			break;
-		}
-		break;
-	default:
-		return FALSE;
-	}
-	return TRUE;
-}
-
-INT_PTR CALLBACK RecordProc(HWND hrecord, UINT msg, WPARAM wparam, LPARAM lparam) {
-	static HWND hjt, hmt, hst, hjn, hmn, hsn;
-	TCHAR timebuffer[TIME_STRLEN];
-
-	switch (msg) {
-	case WM_INITDIALOG:
-		//get static handels
-		hjt = FindWindowEx(hrecord, NULL, TEXT("STATIC"), NULL);
-		hmt = FindWindowEx(hrecord, hjt, TEXT("STATIC"), NULL);
-		hst = FindWindowEx(hrecord, hmt, TEXT("STATIC"), NULL);
-		hjn = FindWindowEx(hrecord, hst, TEXT("STATIC"), NULL);
-		hmn = FindWindowEx(hrecord, hjn, TEXT("STATIC"), NULL);
-		hsn = FindWindowEx(hrecord, hmn, TEXT("STATIC"), NULL);
-
-		//init static control show
-		StringCchPrintf(timebuffer, TIME_STRLEN, TEXT("%d"), Score.junior_time);
-		_tcsncat_s(timebuffer, TIME_STRLEN, TEXT(DEF_TIMEUNIT_EN), _TRUNCATE);
-		SetWindowText(hjt, timebuffer);
-		StringCchPrintf(timebuffer, TIME_STRLEN, TEXT("%d"), Score.middle_time);
-		_tcsncat_s(timebuffer, TIME_STRLEN, TEXT(DEF_TIMEUNIT_EN), _TRUNCATE);
-		SetWindowText(hmt, timebuffer);
-		StringCchPrintf(timebuffer, TIME_STRLEN, TEXT("%d"), Score.senior_time);
-		_tcsncat_s(timebuffer, TIME_STRLEN, TEXT(DEF_TIMEUNIT_EN), _TRUNCATE);
-		SetWindowText(hst, timebuffer);
-		SetWindowText(hjn, Score.junior_name);
-		SetWindowText(hmn, Score.middle_name);
-		SetWindowText(hsn, Score.senior_name);
-		break;
-	case WM_CLOSE:
-		EndDialog(hrecord, 0);
-		break;
-	case WM_COMMAND:
-		switch (LOWORD(wparam)) {
-		case IDRESET:
-			//reset the record
-			resetRecord();
-			StringCchPrintf(timebuffer, TIME_STRLEN, TEXT("%d"), MAX_TIME);
-			_tcsncat_s(timebuffer, TIME_STRLEN, TEXT(DEF_TIMEUNIT_EN), _TRUNCATE);
-			SetWindowText(hjt, timebuffer);
-			SetWindowText(hmt, timebuffer);
-			SetWindowText(hst, timebuffer);
-			SetWindowText(hjn, TEXT(DEF_SCORE_NAME_EN));
-			SetWindowText(hmn, TEXT(DEF_SCORE_NAME_EN));
-			SetWindowText(hsn, TEXT(DEF_SCORE_NAME_EN));
-			break;
-		case IDOK:
-			EndDialog(hrecord, 0);
-			break;
-		default:
-			break;
-		}
-		break;
-	default:
-		return FALSE;
-	}
-	return TRUE;
-}
-
-INT_PTR CALLBACK GetNameProc(HWND hgetname, UINT msg, WPARAM wparam, LPARAM lparam) {
-	static HWND heditname;
-
-	switch (msg) {
-	case WM_INITDIALOG:
-		//get edit control handle and init default show
-		heditname = FindWindowEx(hgetname, NULL, TEXT("EDIT"), NULL);
-		SetWindowText(heditname, getpRecordName());
-		SendMessage(heditname, EM_LIMITTEXT, NAMEEDITLEN - 1, 0);
-		SendMessage(heditname, EM_SETSEL, 0, -1);
-		SetFocus(heditname);
-		break;
-	case WM_DESTROY:
-		//get what writen in the edit control when exit dialog
-		GetWindowText(heditname, getpRecordName(), NAMEEDITLEN);
-		break;
-	case WM_COMMAND:
-		switch (LOWORD(wparam)) {
-		case IDC_OK:
-			EndDialog(hgetname, 0);
-			break;
-		default:
-			break;
-		}
-		break;
-	default:
-		return FALSE;
-	}
-	return TRUE;
-}
-
-INT_PTR CALLBACK CustomProc(HWND hcustom, UINT msg, WPARAM wparam, LPARAM lparam) {
-	static HWND heditw, hedith, heditm;
-	TCHAR str[CUSTOMEDITLEN];
-	static dword width, height, mines;
-
-	switch (msg) {
-	case WM_INITDIALOG:
-		//get edit control handle
-		heditw = FindWindowEx(hcustom, NULL, TEXT("EDIT"), NULL);
-		hedith = FindWindowEx(hcustom, heditw, TEXT("EDIT"), NULL);
-		heditm = FindWindowEx(hcustom, hedith, TEXT("EDIT"), NULL);
-
-		//copy to buffer
-		width = Game.width;
-		height = Game.height;
-		mines = Game.mines;
-
-		//init edit control show
-		dword2str(str, width);
-		SetWindowText(heditw, str);
-		dword2str(str, height);
-		SetWindowText(hedith, str);
-		dword2str(str, mines);
-		SetWindowText(heditm, str);
-		break;
-	case WM_CLOSE:
-		EndDialog(hcustom, 0);
-		break;
-	case WM_DESTROY:
-		//set game mode when exit dialog
-		PostMessage(hWnd, WM_GAMEMODECHG, CUSTOM, MAKECHGLPARAM(width, height, mines));
-		break;
-	case WM_COMMAND:
-		switch (LOWORD(wparam)) {
-		case IDOK:
-			//get what int edit control when click OK
-			GetWindowText(heditw, str, CUSTOMEDITLEN);
-			str2dword(str, width);
-			GetWindowText(hedith, str, CUSTOMEDITLEN);
-			str2dword(str, height);
-			GetWindowText(heditm, str, CUSTOMEDITLEN);
-			str2dword(str, mines);
-			EndDialog(hcustom, 0);
-			break;
-		case IDCANCEL:
-			EndDialog(hcustom, 0);
-			break;
-		default:
-			break;
-		}
-		break;
-	default:
-		return FALSE;
-	}
-	return TRUE;
-}
-
-void MenuProc(WPARAM wparam) {
-	MENUITEMINFO mii = { sizeof(MENUITEMINFO) };
-
-	switch (LOWORD(wparam)) {
-	case ID_GAME_START:
-		PostMessage(hWnd, WM_GAMERESET, 0, 0);
-		break;
-	case ID_GAME_JUNIOR:
-		//change game mode
-		setMenuChecked(JUNIOR);
-		PostMessage(hWnd, WM_GAMEMODECHG, JUNIOR, 0);
-		break;
-	case ID_GAME_MIDDLE:
-		setMenuChecked(MIDDLE);
-		PostMessage(hWnd, WM_GAMEMODECHG, MIDDLE, 0);
-		break;
-	case ID_GAME_SENIOR:
-		setMenuChecked(SENIOR);
-		PostMessage(hWnd, WM_GAMEMODECHG, SENIOR, 0);
-		break;
-	case ID_GAME_CUSTOM:
-		setMenuChecked(CUSTOM);
-		DialogBox(hInst, MAKEINTRESOURCE(IDD_CUSTOM), hWnd, CustomProc);
-		break;
-	case ID_GAME_MARK:
-		//enable ro disable Mark
-		Game.mark = !Game.mark;
-		setQMarkChecked(Game.mark);
-		break;
-	case ID_GAME_RECORD:
-		//show records
-		DialogBox(hInst, MAKEINTRESOURCE(IDD_RECORD), hWnd, RecordProc);
-		break;
-	case ID_GAME_EXIT:
-		PostMessage(hWnd, WM_DESTROY, 0, 0);
-		break;
-	case ID_ABOUT:
-		//show about infomation
-		DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUT), hWnd, AboutProc);
-		break;
-	default:
-		break;
-	}
-}
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	static HWND hresetb;
@@ -343,7 +105,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		EndPaint(hwnd, &ps);
 		break;
 	case WM_COMMAND:
-		if (lparam == 0 && HIWORD(wparam) == 0) MenuProc(wparam);
+		if (lparam == 0 && HIWORD(wparam) == 0) onMenu(wparam);
 		else if (LOWORD(wparam) == ID_RESETB) {
 			if (HIWORD(wparam) == BN_CLICKED) {
 				PostMessage(hwnd, WM_GAMERESET, 0, 0);
@@ -388,7 +150,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		uncovAllMines();
 		paintMap(hdc, MAPUNITSLEFT, MAPUNITSTOP);
 		//if break record
-		if (IS_STANDARD(Game.mode) && Game.time < getRecordTime()) {
+		if (!ISCRUSH(Game.mode) && Game.time < getRecordTime()) {
 			setRecordTime();
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_GETNAME), hwnd, GetNameProc);
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_RECORD), hwnd, RecordProc);

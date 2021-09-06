@@ -2,12 +2,38 @@
 
 /* 
  * this file contains encapsulations of UI operations and Game core operations
- * this file also contians IO functions and Proc Functions for Win32 window
+ * this file also contians IO functions and Win32 Window Proc Functions
+ * NOTE:most functions have no arg check, use with care
  */
 
 #include "stdincludes.h"
 #include "gamecore.h"
 #include "userinterface.h"
+
+
+/* Game private window messages */
+
+#define WM_GAMERESET	(WM_APP + 0)		//send when game needs reset
+#define WM_GAMESUCCESS	(WM_APP + 1)		//send when game is succeed
+#define WM_GAMEFAIL		(WM_APP + 2)		//send when game is failed
+#define WM_GAMESTART	(WM_APP + 3)		//send when game needs start, use lparam as start position
+
+ /* send when game mode needs change,
+  * use wparam as new GameMode,
+  * use lparam as a combination of new width, height and mines
+  * ignore lparam if new GameMode is a standard Mode
+  * call MAKECHGLAPRAM to create a lparam
+  * call GETCHG*** to unpack a lparam
+  */
+#define WM_GAMEMODECHG	(WM_APP + 4)
+
+//create a lparam by width, height and mines
+#define MAKECHGLPARAM(w, h, m)	((LPARAM)((((dword)(w) & 0xFF) | (((dword)(h) & 0xFF) << 8)) | (((dword)(m) & 0xFFFF) << 16)))
+
+//unpack infomation from a lparam
+#define GETCHGWIDTH(l)			((byte)((dword)(l) & 0xFF))
+#define GETCHGHEIGHT(l)			((byte)(((dword)(l) >> 8) & 0xFF))
+#define GETCHGMINES(l)			((word)(((dword)(l) >> 16) & 0xFFFF))
 
 
 /* Dialog defines */
@@ -26,8 +52,10 @@
 #define DEF_TIMEUNIT_CH	" √Î"
 //end Record Dialog
 
-/* IO defines */
+/* IO defines and game init defines */
 
+#define DEF_WND_LEFT	128
+#define DEF_WND_TOP		128
 #define DEF_FILENAME	"MyMinesweeper.ini"
 #define DEF_FILEPATH_EV	"LOCALAPPDATA"
 #define CONTENT_STRLEN	5
@@ -60,11 +88,14 @@
 
 #define GAME_TIMER_ID		1
 #define GAME_TIMER_ELAPSE	1000
-#define DEF_WND_LEFT		128
-#define DEF_WND_TOP			128
 
 
 
+extern HINSTANCE hInst;	//program instance handle
+extern HWND hWnd;		//main window handle
+extern HMENU hMenu;		//main menu handle
+
+//bitmap handle
 extern HBITMAP hbm_rb, hbm_click, hbm_fail, hbm_success;
 extern HBITMAP& hbm_current = hbm_rb;
 
@@ -73,17 +104,6 @@ extern HBITMAP& hbm_current = hbm_rb;
 bool lparamIsInPos(LPARAM laparm);
 //change a mouse position to map index
 int lparam2index(LPARAM lparam);
-
-//transform between positive integer and c_string
-////return -1 if error
-//int str2dword(dword& x, TCHAR* str, dword size);
-//template <dword size> inline int str2dword(dword& x, TCHAR(&str)[size])
-//{ return str2dword(str, size, x); }
-
-////return length of transformed c_string
-//int dword2str(TCHAR *str, dword size, dword x);
-//template <dword size> inline int dword2str(TCHAR(&str)[size], dword x)
-//{ return dword2str(str, size, x); }
 
 
 //manage bitmaps
@@ -130,24 +150,6 @@ void setMenuChecked(byte GameMode);
 void setQMarkChecked(bool Mark);
 
 
-
-////create a c_string to show time score
-////return length of the new c_string
-//int maketimestr(
-//	TCHAR* buffer,
-//	int size,
-//	dword time,
-//	const TCHAR* timeunit = TEXT(DEF_TIMEUNIT_EN)
-//);
-//template <dword size>
-//inline int maketimestr(
-//	TCHAR(&buffer)[size],
-//	dword time,
-//	const TCHAR* timeunit = TEXT(DEF_TIMEUNIT_EN)
-//)
-//{ return maketimestr(buffer, size, time, timeunit); }
-
-
 /* save file management */
 
 //load infomation from a save file
@@ -159,4 +161,26 @@ void saveGame(TCHAR* Path, POINT &wndpos);
 
 
 /* get program version information */
-void getVersion(TCHAR* version, int size_in_ch);
+void getVersion(TCHAR* version, size_t size_in_ch);
+
+
+
+/* window Porc Functions */
+
+//About Dialog, show program description on child modal window
+INT_PTR CALLBACK AboutProc(HWND habout, UINT msg, WPARAM wparam, LPARAM lparam);
+
+//Record Dialog, show record on child modal window
+INT_PTR CALLBACK RecordProc(HWND hrecord, UINT msg, WPARAM wparam, LPARAM lparam);
+
+//GetName Dialog, provide an edit box to get Record Name after breaking Record
+INT_PTR CALLBACK GetNameProc(HWND hgetname, UINT msg, WPARAM wparam, LPARAM lparam);
+
+//Custom Dialog, use to customize Game Map
+INT_PTR CALLBACK CustomProc(HWND hcustom, UINT msg, WPARAM wparam, LPARAM lparam);
+
+
+/* following functions are encapsulations of operations in WndProc */
+
+//response menu message
+int onMenu(WPARAM wparam);
