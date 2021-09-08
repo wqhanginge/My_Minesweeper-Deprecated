@@ -1,8 +1,8 @@
-#include "userinterface.h"
+#include "basicUI.h"
 
 
 /* this array stores InfoNum backgroud
- * 0 represent background color, 1 represent dark color
+ * 0 represent background color, non-0 represent dark color
  */
 const bool InfoNumBG[INFONUM_WIDTH][INFONUM_HEIGHT] =
 {
@@ -24,46 +24,9 @@ const bool InfoNumBG[INFONUM_WIDTH][INFONUM_HEIGHT] =
 };
 
 
-/* usefull functions */
-
-int ppos2index(int px, int py)
-{
-	return xy2index(px2x(px), py2y(py));
-}
-
-int px2x(int px)
-{
-	return (px / MU_SIZE);
-}
-
-int py2y(int py)
-{
-	return (py / MU_SIZE);
-}
-
-int index2px(int index)
-{
-	return x2px(index2x(index));
-}
-
-int index2py(int index)
-{
-	return y2py(index2y(index));
-}
-
-int x2px(int x)
-{
-	return (x * MU_SIZE);
-}
-
-int y2py(int y)
-{
-	return (y * MU_SIZE);
-}
-
-
 
 /* these static functions are used only in this file */
+
 //draw 2 pixel edge concave background,
 //exchange 'light' and 'shadow' to draw a convex backgroung
 //no DC-Buffer
@@ -671,8 +634,7 @@ void drawBmpOnResetButton(HDC hdestdc, int left, int top, HBITMAP hbm, bool clic
 	if (hbm == NULL) return;
 	HDC hdcbitmap = CreateCompatibleDC(hdestdc);
 	SelectObject(hdcbitmap, hbm);
-	if (clicked) BitBlt(hdestdc, left + 1, top + 1, BMP_SIZE - 1, BMP_SIZE - 1, hdcbitmap, 0, 0, SRCCOPY);
-	else BitBlt(hdestdc, left, top, BMP_SIZE, BMP_SIZE, hdcbitmap, 0, 0, SRCCOPY);
+	BitBlt(hdestdc, left + clicked, top + clicked, BMP_SIZE - clicked, BMP_SIZE - clicked, hdcbitmap, 0, 0, SRCCOPY);
 	DeleteDC(hdcbitmap);
 }
 
@@ -755,44 +717,5 @@ void drawMUNum(HDC hdestdc, int left, int top, int num, COLORREF numcolor, COLOR
 	case 7:	drawmuitemnum7(hdestdc, left, top, ((numcolor == COLOR_MUNUMDEF) ? COLOR_MUNUM7 : numcolor)); break;
 	case 8:	drawmuitemnum8(hdestdc, left, top, ((numcolor == COLOR_MUNUMDEF) ? COLOR_MUNUM8 : numcolor)); break;
 	default:break;
-	}
-}
-
-void drawMapUnit(HDC hdestdc, int left, int top, byte mapunit)
-{
-	HDC hdcbuffer = CreateCompatibleDC(hdestdc);
-	HBITMAP hbmbuffer = CreateCompatibleBitmap(hdestdc, MU_SIZE, MU_SIZE);
-	SelectObject(hdcbuffer, hbmbuffer);
-	drawMapUnitNB(hdcbuffer, 0, 0, mapunit);
-	BitBlt(hdestdc, left, top, MU_SIZE, MU_SIZE, hdcbuffer, 0, 0, SRCCOPY);
-	DeleteObject(hdcbuffer);
-	DeleteObject(hbmbuffer);
-}
-
-void drawMapUnitNB(HDC hdestdc, int left, int top, byte mapunit)
-{
-	switch (GETMUSTATE(mapunit)) {
-	case MUS_COVER:
-		drawMUCoverBg(hdestdc, left, top);
-		break;
-	case MUS_FLAG:
-		drawMUFlag(hdestdc, left, top);
-		break;
-	case MUS_MARK:
-		drawMUMark(hdestdc, left, top, false);
-		break;
-	case MUS_UNCOV:
-		if (MUISMINE(mapunit)) drawMUMine(hdestdc, left, top, false);
-		else drawMUNum(hdestdc, left, top, GETMUMINES(mapunit));
-		break;
-	case MUS_BOMB:
-		drawMUMine(hdestdc, left, top, true);
-		break;
-	case MUS_WRONG:
-		drawMUWrong(hdestdc, left, top);
-		break;
-	default:
-		drawMUCoverBg(hdestdc, left, top);
-		break;
 	}
 }

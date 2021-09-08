@@ -8,7 +8,6 @@
 #include <Windows.h>
 #include <tchar.h>
 #include <ctime>
-//#include <cstdlib>
 #include <memory>
 #include "resource.h"
 #include <strsafe.h>

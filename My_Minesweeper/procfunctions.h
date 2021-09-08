@@ -1,14 +1,12 @@
 #pragma once
 
 /* 
- * this file contains encapsulations of UI operations and Game core operations
- * this file also contians IO functions and Win32 Window Proc Functions
+ * this file contains Win32 Window Proc Functions
  * NOTE:most functions have no arg check, use with care
  */
 
 #include "stdincludes.h"
-#include "gamecore.h"
-#include "userinterface.h"
+#include "encapsulations.h"
 
 
 /* Game private window messages */
@@ -16,7 +14,7 @@
 #define WM_GAMERESET	(WM_APP + 0)		//send when game needs reset
 #define WM_GAMESUCCESS	(WM_APP + 1)		//send when game is succeed
 #define WM_GAMEFAIL		(WM_APP + 2)		//send when game is failed
-#define WM_GAMESTART	(WM_APP + 3)		//send when game needs start, use lparam as start position
+#define WM_GAMESTART	(WM_APP + 3)		//send when game needs start, use lparam as start index on GameMap
 
  /* send when game mode needs change,
   * use wparam as new GameMode,
@@ -52,40 +50,16 @@
 #define DEF_TIMEUNIT_CH	" √Î"
 //end Record Dialog
 
-/* IO defines and game init defines */
-
-#define DEF_WND_LEFT	128
-#define DEF_WND_TOP		128
-#define DEF_FILENAME	"MyMinesweeper.ini"
-#define DEF_FILEPATH_EV	"LOCALAPPDATA"
-#define CONTENT_STRLEN	5
-#define INIT_ANAME		"InitInfo"
-#define INIT_XPOS		"xpos"
-#define INIT_YPOS		"ypos"
-#define INIT_MODE		"mode"
-#define INIT_WIDTH		"width"
-#define INIT_HEIGHT		"height"
-#define INIT_MINES		"mines"
-#define INIT_MARK		"mark"
-#define SCORE_ANAME		"Record"
-#define SCORE_JTIME		"junior_time"
-#define SCORE_MTIME		"middle_time"
-#define SCORE_STIME		"senior_time"
-#define SCORE_JNAME		"junior_name"
-#define SCORE_MNAME		"middle_name"
-#define SCORE_SNAME		"senior_name"
-
-
-/* APP Infomation defines */
-
-#define APP_NAME		"My Minesweeper"
-#define WNDC_NAME		"My_Minesweeper"
-#define BUTTON_NAME		"ResetB"
+//About Dialog
 #define ABOUT_INFO_LEN	100
 #define ABOUT_TEXT		"My Minesweeper\nversion "
+//end About Dialog
+
 
 /* miscellaneous defines */
 
+#define APP_NAME			"My Minesweeper"
+#define WNDC_NAME			"My_Minesweeper"
 #define GAME_TIMER_ID		1
 #define GAME_TIMER_ELAPSE	1000
 
@@ -95,50 +69,12 @@ extern HINSTANCE hInst;	//program instance handle
 extern HWND hWnd;		//main window handle
 extern HMENU hMenu;		//main menu handle
 
-//bitmap handle
-extern HBITMAP hbm_rb, hbm_click, hbm_fail, hbm_success;
-extern HBITMAP& hbm_current = hbm_rb;
-
-
-//check if a mouse position is inside the MapUnits area
-bool lparamIsInPos(LPARAM laparm);
-//change a mouse position to map index
-int lparam2index(LPARAM lparam);
-
-
-//manage bitmaps
-void loadBitmaps();
-void freeBitmaps();
-
-
-/* manage MapUnit and ResetButton */
-
-//paint GameMap, the left-top is position 0
-//update map_units that have been changed and clear Update bit
-//it redraws the whole MapArea content
-void paintMap(HDC hdestdc, int mapleft, int maptop);
-
-//paint GameMap, the left-top is position 0
-//update map_units that have been changed and clear Update bit
-//it will paint directly on DC without creating a DC-Buffer
-void paintMapNB(HDC hdestdc, int mapleft, int maptop);
-
-//paint ResetButton without changing its bitmap
-void paintResetButton(HDC hdestdc, int rbleft, int rbtop, bool clicked);
-
-//change bitmap of ResetButton
-//NOTE:you need to redraw ResetButton after calling this function
-void setRBBitmap(HBITMAP& hbm);
-
-
-//show clicked state when a MapUnit is clicked
-//it will do nothing if the index is out of GameMap range
-void showClickedMapUnit(HDC hdestdc, int mapleft, int maptop, int index);
-
-//show clicked state when a group of MapUnits are clicked
-//it jumps MapUnit which index is out of GameMap range
-void showClickedMapUnit(HDC hdestdc, int mapleft, int maptop, Neighbor& indexes);
-
+/* following arguments are private, they can not be seen external */
+/*
+TCHAR save_path[MAX_PATH];	//save file path
+bool last_dbclick;		//if last mouse event was double click
+bool rb_capture;		//indicate if ResetButton get the capture
+*/
 
 
 /* change checked position in Menu */
@@ -148,20 +84,6 @@ void setMenuChecked(byte GameMode);
 
 //check Question Mark in Menu if Mark is true
 void setQMarkChecked(bool Mark);
-
-
-/* save file management */
-
-//load infomation from a save file
-//use default setting to init Game if error
-void initGame(TCHAR* Path, POINT &lastwndpos);
-
-//save Game infomation into a save file
-void saveGame(TCHAR* Path, POINT &wndpos);
-
-
-/* get program version information */
-void getVersion(TCHAR* version, size_t size_in_ch);
 
 
 
@@ -183,4 +105,49 @@ INT_PTR CALLBACK CustomProc(HWND hcustom, UINT msg, WPARAM wparam, LPARAM lparam
 /* following functions are encapsulations of operations in WndProc */
 
 //response menu message
-int onMenu(WPARAM wparam);
+LRESULT onMenu(WPARAM wparam);
+
+//WM_CREATE
+LRESULT onCreate(HWND hwnd, WPARAM wparam, LPARAM lparam);
+
+//WM_DESTROY
+LRESULT onDestroy(HWND hwnd, WPARAM wparam, LPARAM lparam);
+
+//WM_PAINT
+LRESULT onPaint(HWND hwnd, WPARAM wparam, LPARAM lparam);
+
+//WM_COMMAND
+LRESULT onCommand(HWND hwnd, WPARAM wparam, LPARAM lparam);
+
+//WM_GAMERESET
+LRESULT onGameReset(HWND hwnd, WPARAM wparam, LPARAM lparam);
+
+//WM_GAMESTART
+LRESULT onGameStart(HWND hwnd, WPARAM wparam, LPARAM lparam);
+
+//WM_GAMEFAIL
+LRESULT onGameFail(HWND hwnd, WPARAM wparam, LPARAM lparam);
+
+//WM_GAMESUCCESS
+LRESULT onGameSuccess(HWND hwnd, WPARAM wparam, LPARAM lparam);
+
+//WM_GAMEMODECHG
+LRESULT onGameModeChg(HWND hwnd, WPARAM wparam, LPARAM lparam);
+
+//WM_LBUTTONDOWN
+LRESULT onLButtonDwon(HWND hwnd, WPARAM wparam, LPARAM lparam);
+
+//WM_LBUTTONUP
+LRESULT onLButtonUp(HWND hwnd, WPARAM wparam, LPARAM lparam);
+
+//WM_RBUTTONDOWN
+LRESULT onRButtonDown(HWND hwnd, WPARAM wparam, LPARAM lparam);
+
+//WM_RBUTTONUP
+LRESULT onRButtonUp(HWND hwnd, WPARAM wparam, LPARAM lparam);
+
+//WM_MOUSEMOVE
+LRESULT onMouseMove(HWND hwnd, WPARAM wparam, LPARAM lparam);
+
+//WM_TIMER
+LRESULT onTimer(HWND hwnd, WPARAM wparam, LPARAM lparam);

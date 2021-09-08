@@ -214,35 +214,6 @@ const bool InfoNumBG[INFONUM_WIDTH][INFONUM_HEIGHT];
 */
 
 
-/*        x
- *      ----->
- *       0   1   2   3
- *     +---+---+---+---+ --
- * y| 0| 0 | 1 | 2 | 3 |  h
- *  |  +---+---+---+---+ --
- *  v 1| 4 |...index...|
- *     +---+---+---+---+
- *     |<w>|
- * px and py means positon in pixel on window
- * x and y means position in unit on GameMap
- * px = x * w, py = y * h, ppos = (px, py)
- */
-
-//transform pixels on MapArea into GameMap index
-//use the first MapUnit left-top as position 0
-//take care of the input, they must be offset of MAP_LEFT and MAP_TOP
-int ppos2index(int px, int py);
-int px2x(int px);
-int py2y(int py);
-
-//transform a GameMap index into MapArea pixels
-//use the first MapUnit left-top as position zero
-//take care of the output, they are offset of MAP_LEFT or MAP_TOP
-int index2px(int index);
-int index2py(int index);
-int x2px(int x);
-int y2py(int y);
-
 
 /* following functions draw specific bitmaps at appointed position */
 
@@ -623,24 +594,4 @@ void drawMUNum(
 	_In_ COLORREF numcolor = COLOR_MUNUMDEF,
 	_In_ COLORREF bginner = COLOR_MUUNCOV,
 	_In_ COLORREF bgedge = COLOR_MUUNCOVE
-);
-
-//draw a mapunit depends on MapUnit data with default color
-//draw a covered mapunit by default
-//w:MU_SIZE, h:MU_SIZE
-void drawMapUnit(
-	_In_ HDC hdestdc,
-	_In_ int left,
-	_In_ int top,
-	_In_ byte mapunit
-);
-//draw a mapunit depends on MapUnitState with default color
-//draw a covered mapunit by default
-//this function will draw on DC directly without creating a DC-buffer
-//w:MU_SIZE, h:MU_SIZE
-void drawMapUnitNB(
-	_In_ HDC hdestdc,
-	_In_ int left,
-	_In_ int top,
-	_In_ byte mapunit
 );

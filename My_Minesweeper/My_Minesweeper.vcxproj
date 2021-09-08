@@ -151,13 +151,15 @@
     <ClInclude Include="gamecore.h" />
     <ClInclude Include="procfunctions.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="userinterface.h" />
+    <ClInclude Include="basicUI.h" />
+    <ClInclude Include="encapsulations.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="encapsulations.cpp" />
     <ClCompile Include="gamecore.cpp" />
     <ClCompile Include="procfunctions.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="userinterface.cpp" />
+    <ClCompile Include="basicUI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />

@@ -19,8 +19,10 @@ int xy2index(int x, int y)
 	return (y * Game.width) + x;
 }
 
-void getNeighbors(Neighbor & neighbor, int x, int y)
+int getNeighbors(Neighbor & neighbor, int x, int y)
 {
+	if (x < 0 || y < 0) return -1;
+	if ((word)xy2index(x, y) >= Game.size) return -1;
 	neighbor[0] = xy2index(x, y);
 	neighbor[1] = (x > 0 && y > 0) ? xy2index(x - 1, y - 1) : -1;
 	neighbor[2] = (y > 0) ? xy2index(x, y - 1) : -1;
@@ -30,11 +32,12 @@ void getNeighbors(Neighbor & neighbor, int x, int y)
 	neighbor[6] = (x > 0 && y < Game.height - 1) ? xy2index(x - 1, y + 1) : -1;
 	neighbor[7] = (y < Game.height - 1) ? xy2index(x, y + 1) : -1;
 	neighbor[8] = (x < Game.width - 1 && y < Game.height - 1) ? xy2index(x + 1, y + 1) : -1;
+	return 0;
 }
 
-void getNeighbors(Neighbor & neighbor, int index)
+int getNeighbors(Neighbor & neighbor, int index)
 {
-	getNeighbors(neighbor, index2x(index), index2y(index));
+	return getNeighbors(neighbor, index2x(index), index2y(index));
 }
 
 void setGameMode(byte mode, byte width/*=0*/, byte height/*=0*/, word mines/*=0*/)
@@ -102,10 +105,23 @@ void setMark(bool enable)
 	Game.mark = enable;
 }
 
-void setGameState(byte state)
+int setGameTime(word time)
 {
-	if (state >= UNKNOW) return;
+	if (time > MAX_TIME) return -1;
+	Game.time = time;
+	return 0;
+}
+
+void nextGameTime()
+{
+	Game.time++;
+}
+
+int setGameState(byte state)
+{
+	if (state >= UNKNOW) return -1;
 	Game.state = state;
+	return 0;
 }
 
 void resetGame()
@@ -114,19 +130,20 @@ void resetGame()
 	Game.mine_remains = Game.mines;
 	Game.uncov_units = 0;
 	Game.time = 0;
-	memset(Game.map, 0, sizeof(byte)*Game.size);
+	memset(Game.map, 0, sizeof(byte) * Game.size);
 }
 
-void createGameMap(int x, int y)
+int createGameMap(int x, int y)
 {
-	if (Game.state != INIT) return;
+	if (Game.state != INIT) return -1;
 
 	Neighbor safepos;
 	getNeighbors(safepos, x, y);
 
 	//generate mines, 8 units around where clicked won't have mines
 	//use shuffle algorithm
-	memset(Game.map, MUM_MINE, sizeof(byte)*Game.mines);
+	memset(Game.map, MU_UPDATE, sizeof(byte) * Game.size);	//set Update bit
+	memset(Game.map, (MU_UPDATE | MUM_MINE), sizeof(byte) * Game.mines);	//generate mines
 	dword neicount = 0;
 	for (int i = 0; i < 9; i++) neicount += (safepos[i] != -1);	//remember how many safe positions needed
 	for (dword k = 0; k < Game.mines; k++) {	//shuffle algorithm, ignore tail
@@ -154,11 +171,12 @@ void createGameMap(int x, int y)
 			if (neipos[j] != -1 && MUISMINE(Game.map[neipos[j]])) m++;
 		SETMUMINES(m, Game.map[i]);
 	}
+	return 0;
 }
 
-void createGameMap(int index)
+int createGameMap(int index)
 {
-	createGameMap(index2x(index), index2y(index));
+	return createGameMap(index2x(index), index2y(index));
 }
 
 int clickUnit(int x, int y)
@@ -260,6 +278,44 @@ void uncovAllMines()
 	}
 }
 
+int gameStart(int x, int y)
+{
+	if (x < 0 || y < 0 || xy2index(x, y) >= Game.size) return -2;
+	if (createGameMap(x, y) == -1) return -2;
+	Game.state = PROGRESS;
+	Game.mine_remains = Game.mines;
+	Game.time = 0;
+	Game.uncov_units = 0;
+	if (clickUnit(x, y) == -1) return -1;
+	openBlanks(x, y);
+	if (Game.mines == Game.size - Game.uncov_units)
+		return 1;
+	else
+		return 0;
+}
+
+int gameStart(int index)
+{
+	return gameStart(index2x(index), index2y(index));
+}
+
+bool isGameSuccessful()
+{
+	return (Game.mines == Game.size - Game.uncov_units);
+}
+
+int gameSet()
+{
+	Game.state = isGameSuccessful() ? SUCCESS : FAIL;
+	//show all mines' positions when game set
+	Game.mine_remains = 0;
+	uncovAllMines();
+	//if break record
+	if (Game.mode < CUSTOM && Game.state == SUCCESS && Game.time < getRecordTime(Game.mode))
+		return 1;
+	return 0;
+}
+
 void resetRecord()
 {
 	Score = { MAX_TIME,MAX_TIME,MAX_TIME,_T(DEF_SCORE_NAME_EN),_T(DEF_SCORE_NAME_EN),_T(DEF_SCORE_NAME_EN) };
@@ -287,7 +343,7 @@ TCHAR *getpRecordName(byte gamemode)
 	return nullptr;
 }
 
-void setRecordTime(byte gamemode, word besttime)
+int setRecordTime(byte gamemode, word besttime)
 {
 	switch (gamemode) {
 	case JUNIOR:
@@ -300,6 +356,7 @@ void setRecordTime(byte gamemode, word besttime)
 		Score.senior_time = besttime;
 		break;
 	default:
-		break;
+		return -1;
 	}
+	return 0;
 }

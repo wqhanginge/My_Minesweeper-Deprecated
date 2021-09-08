@@ -38,13 +38,16 @@
     <ClInclude Include="resource.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="userinterface.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="procfunctions.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="stdincludes.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="basicUI.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="encapsulations.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -55,10 +58,13 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="userinterface.cpp">
+    <ClCompile Include="procfunctions.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="procfunctions.cpp">
+    <ClCompile Include="basicUI.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="encapsulations.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
