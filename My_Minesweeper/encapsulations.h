@@ -15,8 +15,8 @@
 
 #define DEF_WND_LEFT	128
 #define DEF_WND_TOP		128
-#define DEF_WND_WIDTH	800
-#define DEF_WND_HEIGHT	800
+#define DEF_WND_WIDTH	750
+#define DEF_WND_HEIGHT	700
 #define DEF_FILENAME	"MyMinesweeper.ini"
 #define DEF_FILEPATH_EV	"LOCALAPPDATA"
 #define CONTENT_STRLEN	5
