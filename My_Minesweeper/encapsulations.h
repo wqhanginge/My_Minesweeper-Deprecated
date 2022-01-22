@@ -65,7 +65,7 @@
 #define RIGHTSTR	\
 "This program comes with ABSOLUTELY NO WARRANTY.\n\
 This is free software, and you are welcome to redistribute it under certain conditions.\n\n\
-See GNU General Public License v3.0 for details."
+Ckeck <https://www.gnu.org/licenses/> and view GNU General Public License v3.0 for details."
 
 
 
