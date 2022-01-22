@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="文档">
+      <UniqueIdentifier>{1f4eea13-9d20-44c4-a2d7-489d52214988}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Click.bmp">
@@ -52,19 +55,19 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="gamecore.cpp">
+    <ClCompile Include="gamecore.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="main.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="procfunctions.cpp">
+    <ClCompile Include="procfunctions.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="basicUI.cpp">
+    <ClCompile Include="basicUI.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="encapsulations.cpp">
+    <ClCompile Include="encapsulations.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
