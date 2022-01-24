@@ -15,10 +15,17 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 \*****************************************************************************/
+/*****************************************************************************\
+ * stdincludes.h
+ *****************************************************************************
+ * this file is a overall include of std-libs used in program,
+ * and global type and variable defines as well
+\*****************************************************************************/
+
 
 #pragma once
 
-//disable uncommonly used APIs and reduce program size
+//disable uncommonly used APIs to reduce program size
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -41,3 +48,12 @@ typedef unsigned short word;
 typedef unsigned dword;
 
 #define nullptr NULL
+
+
+/* followings are global handles for program and window,
+ * they are defined in main.c but should be used across all files
+ */
+
+extern HINSTANCE hInst;	//program instance handle
+extern HWND hWnd;		//main window handle
+extern HMENU hMenu;		//main menu handle
