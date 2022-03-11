@@ -94,8 +94,8 @@ void paintINums(HDC hdestdc, int left, int top, int num)
 	drawDCINums(hdcbuffer, 0, 0, num);
 	BitBlt(hdestdc, left, top, INUMS_WIDTH, INUMS_HEIGHT, hdcbuffer, 0, 0, SRCCOPY);
 
-	DeleteObject(hbmbuffer);
 	DeleteDC(hdcbuffer);
+	DeleteObject(hbmbuffer);
 }
 
 
@@ -109,8 +109,8 @@ void paintResetButton(HDC hdestdc, int left, int top, bool clicked)
 	drawDCResetButton(hdcbuffer, 0, 0, hbm_current, clicked);
 	BitBlt(hdestdc, left, top, RB_SIZE, RB_SIZE, hdcbuffer, 0, 0, SRCCOPY);
 
-	DeleteObject(hbmbuffer);
 	DeleteDC(hdcbuffer);
+	DeleteObject(hbmbuffer);
 }
 
 //change bitmap of ResetButton
@@ -130,7 +130,7 @@ void paintMapUnit(HDC hdestdc, int muleft, int mutop, int index)
 	drawDCMapUnit(hdcbuffer, 0, 0, index);
 	BitBlt(hdestdc, muleft, mutop, MU_SIZE, MU_SIZE, hdcbuffer, 0, 0, SRCCOPY);
 
-	DeleteObject(hdcbuffer);
+	DeleteDC(hdcbuffer);
 	DeleteObject(hbmbuffer);
 }
 
@@ -146,8 +146,8 @@ void paintMap(HDC hdestdc, int mapleft, int maptop, bool force)
 	drawDCMap(hdcbuffer, 0, 0, force);
 	BitBlt(hdestdc, mapleft, maptop, MAP_WIDTH, MAP_HEIGHT, hdcbuffer, 0, 0, SRCCOPY);
 
+	DeleteDC(hdcbuffer);
 	DeleteObject(hbmbuffer);
-	DeleteObject(hdcbuffer);
 }
 
 

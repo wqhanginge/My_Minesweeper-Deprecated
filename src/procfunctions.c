@@ -382,8 +382,8 @@ LRESULT onPaint(HWND hwnd, WPARAM wparam, LPARAM lparam)
 	drawDCMap(hdcbuffer, MAP_LEFT, MAP_TOP, true);
 
 	BitBlt(hpaintdc, 0, 0, CLIENT_WIDTH, CLIENT_HEIGHT, hdcbuffer, 0, 0, SRCCOPY);
+	DeleteDC(hdcbuffer);
 	DeleteObject(hbmbuffer);
-	DeleteObject(hdcbuffer);
 
 	EndPaint(hwnd, &ps);
 	return 0;
