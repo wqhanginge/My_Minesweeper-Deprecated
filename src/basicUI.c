@@ -170,7 +170,7 @@ static void drawthinedgebg(
 //draw 1 pixel half edge 2D like background,
 //draw left edge and top edge
 //no DC-Buffer
-void drawhalfedgebg(
+static void drawhalfedgebg(
 	_In_ HDC hdestdc,
 	_In_ int left,
 	_In_ int top,
@@ -734,9 +734,9 @@ void drawDCMUNum(HDC hdestdc, int left, int top, int num)
 }
 
 //draw a mapunit depends on MapUnitState with default color
-void drawDCMapUnit(HDC hdestdc, int left, int top, int index)
+void drawDCMapUnit(HDC hdestdc, int left, int top, byte mapunit)
 {
-	switch (GETMUSTATE(Game.map[index])) {
+	switch (GETMUSTATE(mapunit)) {
 	case MUS_COVER:
 		drawDCMUCover(hdestdc, left, top);
 		break;
@@ -747,8 +747,8 @@ void drawDCMapUnit(HDC hdestdc, int left, int top, int index)
 		drawDCMUMark(hdestdc, left, top, false);
 		break;
 	case MUS_UNCOV:
-		if (MUISMINE(Game.map[index])) drawDCMUMine(hdestdc, left, top, false);
-		else drawDCMUNum(hdestdc, left, top, GETMUMINES(Game.map[index]));
+		if (MUISMINE(mapunit)) drawDCMUMine(hdestdc, left, top, false);
+		else drawDCMUNum(hdestdc, left, top, GETMUMINES(mapunit));
 		break;
 	case MUS_BOMB:
 		drawDCMUMine(hdestdc, left, top, true);
@@ -760,15 +760,13 @@ void drawDCMapUnit(HDC hdestdc, int left, int top, int index)
 		drawDCMUCover(hdestdc, left, top);
 		break;
 	}
-	REMMUUPDATE(Game.map[index]);
 }
 
 
 //draw Game Map directly on DC
-void drawDCMap(HDC hdestdc, int left, int top, bool force)
+void drawDCMap(HDC hdestdc, int left, int top, byte* gamemap, word gamesize)
 {
-	for (word i = 0; i < Game.size; i++) {
-		if (!force && !MUISUPDATE(Game.map[i])) continue;
-		drawDCMapUnit(hdestdc, left + index2px(i), top + index2py(i), i);
+	for (word i = 0; i < gamesize; i++) {
+		drawDCMapUnit(hdestdc, left + index2px(i), top + index2py(i), gamemap[i]);
 	}
 }

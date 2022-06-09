@@ -127,7 +127,8 @@ void paintMapUnit(HDC hdestdc, int muleft, int mutop, int index)
 	HBITMAP hbmbuffer = CreateCompatibleBitmap(hdestdc, MU_SIZE, MU_SIZE);
 
 	SelectObject(hdcbuffer, hbmbuffer);
-	drawDCMapUnit(hdcbuffer, 0, 0, index);
+	drawDCMapUnit(hdcbuffer, 0, 0, Game.map[index]);
+	REMMUUPDATE(Game.map[index]);
 	BitBlt(hdestdc, muleft, mutop, MU_SIZE, MU_SIZE, hdcbuffer, 0, 0, SRCCOPY);
 
 	DeleteDC(hdcbuffer);
@@ -143,7 +144,11 @@ void paintMap(HDC hdestdc, int mapleft, int maptop, bool force)
 	SelectObject(hdcbuffer, hbmbuffer);
 	//copy current UI content and draw new content on it
 	BitBlt(hdcbuffer, 0, 0, MAP_WIDTH, MAP_HEIGHT, hdestdc, mapleft, maptop, SRCCOPY);
-	drawDCMap(hdcbuffer, 0, 0, force);
+	for (word i = 0; i < Game.size; i++) {
+		if (!force && !MUISUPDATE(Game.map[i])) continue;
+		drawDCMapUnit(hdestdc, index2px(i), index2py(i), Game.map[i]);
+		REMMUUPDATE(Game.map[i]);
+	}
 	BitBlt(hdestdc, mapleft, maptop, MAP_WIDTH, MAP_HEIGHT, hdcbuffer, 0, 0, SRCCOPY);
 
 	DeleteDC(hdcbuffer);
