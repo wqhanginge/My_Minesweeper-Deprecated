@@ -146,7 +146,7 @@ void paintMap(HDC hdestdc, int mapleft, int maptop, bool force)
 	BitBlt(hdcbuffer, 0, 0, MAP_WIDTH, MAP_HEIGHT, hdestdc, mapleft, maptop, SRCCOPY);
 	for (word i = 0; i < Game.size; i++) {
 		if (!force && !MUISUPDATE(Game.map[i])) continue;
-		drawDCMapUnit(hdestdc, index2px(i), index2py(i), Game.map[i]);
+		drawDCMapUnit(hdcbuffer, index2px(i), index2py(i), Game.map[i]);
 		REMMUUPDATE(Game.map[i]);
 	}
 	BitBlt(hdestdc, mapleft, maptop, MAP_WIDTH, MAP_HEIGHT, hdcbuffer, 0, 0, SRCCOPY);
